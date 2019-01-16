@@ -1,0 +1,44 @@
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+<script type="text/javascript">
+
+function toDataURL(url, callback) {
+    var httpRequest = new XMLHttpRequest();
+    httpRequest.onload = function() {
+        var fileReader = new FileReader();
+        fileReader.onloadend = function() {
+            callback(fileReader.result);
+        }
+        fileReader.readAsDataURL(httpRequest.response);
+    };
+
+    httpRequest.responseType = 'blob';
+    httpRequest.open('GET', url); // 'GET' will be ignored because the url is non-HTTP
+    httpRequest.send();
+}
+
+window.onload = function() {
+	// setup the button click
+	document.getElementById("submit-button").onclick = function() {
+		if(document.getElementById("file-upload").value.length > 0) {
+		    toDataURL(document.getElementById("file-upload").value[0], function(imgString) {
+		    passImage(imgString)
+		    })
+		}
+        else {
+            console.log('Attach something')
+        }
+	};
+}
+
+function passImage(img) {
+	// ajax the JSON to the server
+	$.post("receiver", JSON.stringify(img), function() {
+
+	});
+	// stop link reloading the page
+ event.preventDefault();
+}
+</script>
+Valid image formats: PGN, JPEG.<br /><br />
+<input type="file" id="file-upload" accept="image/png, image/jpeg">
+<input type="submit" id="submit-button" value="Read Game">
