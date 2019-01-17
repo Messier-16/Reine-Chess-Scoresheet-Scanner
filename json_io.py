@@ -1,10 +1,19 @@
 #!flask/bin/python
 
-import sys
+from flask import Flask, render_template, request
+import base64
 
-from flask import Flask, render_template, request, redirect, Response
-import random
-import json
+# save wherever you want
+img_location = 'C:\\Users\\alexf\\desktop\\reine\\base64_test.png'
+
+
+# go from base64 encoding to choice location
+def string_to_saved_image(base64_string):
+    split = base64_string.split(',', 1)
+    byte_string = bytes(split[1], 'utf-8')
+    with open(img_location, 'wb') as fh:
+        fh.write(base64.decodebytes(byte_string))
+
 
 app = Flask(__name__)
 
@@ -19,20 +28,10 @@ def output():
 def worker():
     # read json + reply
     data = request.get_json(force=True)
-
+    string_to_saved_image(data)
     return data
 
 
 if __name__ == '__main__':
     # run!
     app.run()
-
-'''
-WITH OPENCV:
-
- import base64
- imgdata = base64.b64decode(imgstring) #I use imgdata as this variable itself in references below
- filename = 'some_image.jpg'
- with open(filename, 'wb') as f:
-    f.write(imgdata)
-'''

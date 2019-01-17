@@ -1,3 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style type = 'text/css' media='screen'>
+        #upload-message {
+            visibility: hidden;
+        }
+    </style>
+</head>
+<body>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
 <script type="text/javascript">
 
@@ -16,16 +26,43 @@ function toDataURL(url, callback) {
     httpRequest.send();
 }
 
+function encodeImageFileAsURL() {
+
+    var filesSelected = document.getElementById("file-upload").files;
+    if (filesSelected.length > 0) {
+      var fileToLoad = filesSelected[0];
+
+      var fileReader = new FileReader();
+
+      fileReader.onload = function(fileLoadedEvent) {
+        var srcData = fileLoadedEvent.target.result; // <--- data: base64
+
+        // var newImage = document.createElement('img');
+        // newImage.src = srcData;
+
+        passImage(srcData)
+
+        // document.getElementById("imgTest").innerHTML = newImage.outerHTML;
+        // alert("Converted Base64 version is " + document.getElementById("imgTest").innerHTML);
+        // console.log("Converted Base64 version is " + document.getElementById("imgTest").innerHTML);
+      }
+      fileReader.readAsDataURL(fileToLoad);
+    }
+  }
+
 window.onload = function() {
 	// setup the button click
 	document.getElementById("submit-button").onclick = function() {
 		if(document.getElementById("file-upload").value.length > 0) {
+		    /*
 		    toDataURL(document.getElementById("file-upload").value[0], function(imgString) {
 		    passImage(imgString)
 		    })
+		    */
+		    encodeImageFileAsURL()
 		}
         else {
-            console.log('Attach something')
+            document.getElementById("upload-message").style.visibility="visible";
         }
 	};
 }
@@ -42,3 +79,6 @@ function passImage(img) {
 Valid image formats: PGN, JPEG.<br /><br />
 <input type="file" id="file-upload" accept="image/png, image/jpeg">
 <input type="submit" id="submit-button" value="Read Game">
+<p id="upload-message">Please upload a file.</p>
+</body>
+</html>
