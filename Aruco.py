@@ -1,10 +1,12 @@
 # Created by Alex Fung on 1/5/19!!
 
 import time
-start = time.time()
 import cv2 as cv
 from cv2 import aruco
 import numpy as np
+
+start = time.time()
+
 
 # detect marker
 def find_aruco(img):
@@ -21,11 +23,11 @@ def get_data(marker_pos, marker_id, aruco_res):
     return data_point
 
 
-# from Adrian Rosebrock
 def get_transform():
     rect = np.zeros((4, 2), 'float32')  # dtype = 'float32'
-    for marker in range(4): rect[marker] = (
-        get_data(marker, marker, find_aruco(input_img)))  # marker used twice because we use markers # 0, 1, 2, and 3
+    for marker in range(4):
+        # marker used twice because we use markers # 0, 1, 2, and 3
+        rect[marker] = (get_data(marker, marker, find_aruco(input_img)))
     # top-left, top-right, bottom-right, bottom-left
     (tl, tr, br, bl) = rect
 
@@ -65,14 +67,15 @@ def clean(img):
 '''
 
 
-file = cv.imread("C:\\Users\\alexf\\Desktop\\reine\\scoresheet_samples\\IMG_1377.JPG")
+file = cv.imread("C:\\Users\\alexf\\Desktop\\reine\\scoresheet_samples\\IMG_1388.JPG")
 # these values are scoresheet-specific, dim. are multiples of 11 x 17
-width = 506 # 11 * 46
-height = 770 # 17 * 46 - 12
+width = 506  # 11 * 46
+height = 770  # 17 * 46 - 12
 
 input_img = cv.cvtColor(file, cv.COLOR_BGR2GRAY)
 
 read = False
+aligned_img = None
 while not read:
     try:
         # fails if the ArUco markers aren't detected
@@ -85,12 +88,12 @@ while not read:
 
 # big_img = cv.resize(aligned_img, (width * 2, height * 2))
 # clean_img = clean(big_img)
-right_size_img = cv.resize(aligned_img, (width, height))
-ret, final_img = cv.threshold(right_size_img, 254, 255, cv.THRESH_BINARY)
+final_img = cv.resize(aligned_img, (width, height))
+# ret, final_img = cv.threshold(right_size_img, 254, 255, cv.THRESH_BINARY)
 
 # just for testing
 cv.imshow('TransformedImage', final_img)
-cv.imwrite("C:\\Users\\alexf\\Desktop\\reine\\scoresheet_samples\\1377.png", final_img)
+cv.imwrite("C:\\Users\\alexf\\Desktop\\reine\\scoresheet_samples\\1388.png", final_img)
 end = time.time()
 print(end - start)
 cv.waitKey()
