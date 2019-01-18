@@ -1,5 +1,5 @@
 # the example game is Paul Keres vs. Kurt Paul Otto Joseph Richter, 22 Sep 1942
-# number of 'wrong' moves: 35
+# number of branches = 37
 # Created by Alex Fung on 1/16/19!
 
 import time
@@ -739,7 +739,6 @@ moves = [
     ['+', 'x', 'x', 'x', 'x', 'x', 'x', 'x'],
 
     ['_']
-
 ]
 
 confs = [
@@ -1469,15 +1468,14 @@ confs = [
     [1, 0, 0, 0, 0, 0, 0, 0],
 
     [-1]
-
 ]
-
-certain_conf = 0.9  # chars will be double-checked if they have confidence below this
-min_conf = 0.2  # chars will not be considered if their confidence is below this
 
 
 # create the_possible_chars
 def read_input(move_input, probability_input):
+    certain_conf = 0.9  # chars will be double-checked if they have confidence below this
+    min_conf = 0.2  # chars will not be considered if their confidence is below this
+
     all_the_possible_chars = []  # all possible variations of each move
     this_move = []  # find the possibilities for each move separately so we can iterate one-by-one
 
@@ -1520,42 +1518,46 @@ def chars_to_moves(all_possible_chars):
     return the_possible_moves
 
 
-possible_pgns = []
-possible_moves = chars_to_moves(read_input(moves, confs))
-pgn = []
-boards = []
-for move in range(len(possible_moves)):
-    pgn.append('')
-    boards.append('')  # filling up the list so we can set the value of list elements instead of appending
-boards.append('')  # we use the board of move_num + 1 to calculate validity, thus one extra element is needed
-boards[0] = chess.pgn.read_game(io.StringIO('e4')).board()  # just getting an empty starting board
-best_guess = []
+def get_pgns(the_moves, the_confs):
+    possible_pgns = []
+    possible_moves = chars_to_moves(read_input(the_moves, the_confs))
+    pgn = []
+    boards = []
+    for move in range(len(possible_moves)):
+        pgn.append('')
+        boards.append('')  # filling up the list so we can set the value of list elements instead of appending
+    boards.append('')  # we use the board of move_num + 1 to calculate validity, thus one extra element is needed
+    boards[0] = chess.pgn.read_game(io.StringIO('e4')).board()  # just getting an empty starting board
+    best_guess = []
 
+    def check_variations(move_num):
+        global best_guess
+        highest_checked = 0
 
-def check_variations(move_num):
-    global best_guess
-    highest_checked = 0
+        for possible_move in possible_moves[move_num]:
+            boards[move_num + 1] = boards[move_num].copy()
 
-    for possible_move in possible_moves[move_num]:
-        boards[move_num + 1] = boards[move_num].copy()
+            try:
+                boards[move_num + 1].push_san(possible_move)
+                if move_num == len(possible_moves) - 1:
+                    pgn[move_num] = possible_move
+                    possible_pgns.append(pgn.copy())
+                else:
+                    pgn[move_num] = possible_move
+                    # if there is no error, we recursively check until we either reach an error or find a completely
+                    #   valid game
+                    check_variations(move_num + 1)
 
-        try:
-            boards[move_num + 1].push_san(possible_move)
-            if move_num == len(possible_moves) - 1:
-                pgn[move_num] = possible_move
-                possible_pgns.append(pgn.copy())
-            else:
-                pgn[move_num] = possible_move
-                # if there is no error, we recursively check until we either reach an error or find a completely
-                #   valid game
-                check_variations(move_num + 1)
+            except ValueError:
+                if move_num > highest_checked:
+                    best_guess = pgn.copy()
+                    highest_checked = move_num
+                continue
+        return
 
-        except ValueError:
-            if move_num > highest_checked:
-                best_guess = pgn.copy()
-                highest_checked = move_num
-            continue
-    return
+    check_variations(0)
+
+    return possible_pgns, best_guess
 
 
 # removing pgns including moves that have moves which are notated as, but are not, checks
@@ -1563,7 +1565,7 @@ def check_for_checks(possible_pgn_list):
     checked_pgns = []
     for possible_pgn in possible_pgn_list:
         valid = True
-        board = boards[0].copy()  # playing the game out again
+        board = chess.pgn.read_game(io.StringIO('e4')).board().copy()  # playing the game out again
         for half_move in possible_pgn:
             board.push_san(half_move)
             if half_move.endswith('+'):
@@ -1592,7 +1594,7 @@ def list_to_pgn(checked_pgn):
 
 
 # different result depending on how many error-free PGNs are found
-def print_result(checked_pgns):
+def print_result(checked_pgns, good_guess):
     if len(checked_pgns) == 1:
         valid_pgn = list_to_pgn(checked_pgns[0])
         print('The following pgn is valid:')
@@ -1600,7 +1602,7 @@ def print_result(checked_pgns):
 
     elif not len(checked_pgns) > 0:
         print('Sorry, we couldn\'t find a complete PGN--here\'s as far as we got:')
-        print(best_guess)
+        print(list_to_pgn(good_guess))
 
     else:
         valid_pgn = list_to_pgn(checked_pgns[0])
@@ -1623,9 +1625,8 @@ def print_result(checked_pgns):
 
 
 # outputs of the program
-check_variations(0)
-print_result(check_for_checks(possible_pgns))
+the_possible_pgns, a_good_guess = get_pgns(moves, confs)
+print_result(check_for_checks(the_possible_pgns), a_good_guess)
 
 end = time.time()
-print('Time: ')
-print(end - start)
+print('Time: ' + str(end - start))
