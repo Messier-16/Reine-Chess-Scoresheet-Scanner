@@ -1,30 +1,147 @@
 <!DOCTYPE html>
+<html class="no-js">
+    <head>
+        <!-- remove this if you use Modernizr -->
+        <script>(function(e,t,n){var r=e.querySelectorAll("html")[0];r.className=r.className.replace(/(^|\s)no-js(\s|$)/,"$1js$2")})(document,window,0);</script>
+    </head>
+</html>
 <html>
 <head>
+    <link href="https://fonts.googleapis.com/css?family=Poppins:200" rel="stylesheet">
     <style type = 'text/css' media='screen'>
-        #upload-message {
-            visibility: hidden;
+        #upload-message, #final-pgn, #pgn-declarer { visibility: hidden; }
+
+        p {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.8em;
+            text-align: center;
+            color: #D9FFF8;
+            font-weight: bold;
+        }
+
+        #both-buttons {
+            position: fixed;
+            left: 50%;
+            width: 800px;
+            margin-left: -400px;
+        }
+
+        #file-holder, .button-holder {
+            background-color: #D9FFF8;
+            width: 800px;
+            margin-left: 50%
+            text-align: center;
+            display: inline-block;
+            border: solid #D9FFF8 2px;
+
+            -o-transition:.5s;
+            -ms-transition:.5s;
+            -moz-transition:.5s;
+            -webkit-transition:.5s;
+            transition:.5s;
+        }
+
+        #file-holder { margin-bottom: 8vw; }
+
+        #submit-button {
+            font-size: 1.3em;
+            font-family: 'Poppins', sans-serif;
+            background-color: #D9FFF8;
+            cursor: pointer;
+            color: #5831F5;
+            font-weight: bold;
+            border: none;
+            padding-top: 0.4vw;
+            padding-bottom: 0.4vw;
+            width: 800px;
+
+            -o-transition:.5s;
+            -ms-transition:.5s;
+            -moz-transition:.5s;
+            -webkit-transition:.5s;
+            transition:.5s;
+            }
+
+        #submit-button:focus { outline: 0; }
+
+        #file-upload:focus { outline: 0; }
+
+        .button-holder, #file-holder { text-align: center; }
+
+        .js .inputfile {
+            width: 0.1px;
+            height: 0.1px;
+            opacity: 0;
+            overflow: hidden;
+            position: absolute;
+            z-index: -1;
+        }
+
+        .no-js .inputfile + label { display: none; }
+
+        .inputfile + label {
+            font-size: 1.3em;
+            font-family: 'Poppins', sans-serif;
+            color: #5831F5;
+            background-color: #d9fff8;
+            display: inline-block;
+            cursor: pointer; /* "hand" cursor */
+            border: none;
+            font-weight: bold;
+            padding-top: 0.4vw;
+            padding-bottom: 0.4vw;
+            width: 800px;
+
+            -o-transition:.5s;
+            -ms-transition:.5s;
+            -moz-transition:.5s;
+            -webkit-transition:.5s;
+            transition:.5s;
+        }
+
+        .inputfile:focus + label,
+        .inputfile + label:hover,
+        #submit-button:hover {
+            background-color: #5831F5;
+            color: #D9FFF8;
+        }
+
+        #file-holder:hover > .inputfile + label {
+            background-color: #5831F5;
+            color: #D9FFF8;
+        }
+
+        #file-holder:hover {
+            background-color: #5831F5;
+            color: #D9FFF8;
+        }
+
+        .button-holder:hover > #submit-button {
+            background-color: #5831F5;
+            color: #D9FFF8;
+        }
+
+        .button-holder:hover {
+            background-color: #5831F5;
+            color: #D9FFF8;
+        }
+
+        .inputfile:focus + label {
+            outline: 1px dotted #000;
+            outline: -webkit-focus-ring-color auto 5px;
+        }
+
+        .inputfile + label * { pointer-events: none; }
+
+        #some-text {
+            width: 800px;
+            word-wrap: break-word;
         }
     </style>
 </head>
 <body>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
 <script type="text/javascript">
-
-function toDataURL(url, callback) {
-    var httpRequest = new XMLHttpRequest();
-    httpRequest.onload = function() {
-        var fileReader = new FileReader();
-        fileReader.onloadend = function() {
-            callback(fileReader.result);
-        }
-        fileReader.readAsDataURL(httpRequest.response);
-    };
-
-    httpRequest.responseType = 'blob';
-    httpRequest.open('GET', url); // 'GET' will be ignored because the url is non-HTTP
-    httpRequest.send();
-}
 
 function encodeImageFileAsURL() {
 
@@ -37,48 +154,89 @@ function encodeImageFileAsURL() {
       fileReader.onload = function(fileLoadedEvent) {
         var srcData = fileLoadedEvent.target.result; // <--- data: base64
 
-        // var newImage = document.createElement('img');
-        // newImage.src = srcData;
-
         passImage(srcData)
-
-        // document.getElementById("imgTest").innerHTML = newImage.outerHTML;
-        // alert("Converted Base64 version is " + document.getElementById("imgTest").innerHTML);
-        // console.log("Converted Base64 version is " + document.getElementById("imgTest").innerHTML);
       }
       fileReader.readAsDataURL(fileToLoad);
     }
   }
 
 window.onload = function() {
+    // https://tympanus.net/codrops/2015/09/15/styling-customizing-file-inputs-smart-way
+
+    'use strict';
+
+    ;( function ( document, window, index )
+    {
+        var inputs = document.querySelectorAll( '.inputfile' );
+        Array.prototype.forEach.call( inputs, function( input )
+        {
+            var label	 = input.nextElementSibling,
+                labelVal = label.innerHTML;
+
+            input.addEventListener( 'change', function( e )
+            {
+                var fileName = e.target.value.split( '\\' ).pop();
+
+                if( fileName )
+                    label.querySelector( 'span' ).innerHTML = fileName;
+                else
+                    label.innerHTML = labelVal;
+            });
+
+            // Firefox bug fix
+            input.addEventListener( 'focus', function(){ input.classList.add( 'has-focus' ); });
+            input.addEventListener( 'blur', function(){ input.classList.remove( 'has-focus' ); });
+        });
+    }( document, window, 0 ));
+
 	// setup the button click
-	document.getElementById("submit-button").onclick = function() {
+	document.getElementById("submit-button").onclick = () => {
 		if(document.getElementById("file-upload").value.length > 0) {
-		    /*
-		    toDataURL(document.getElementById("file-upload").value[0], function(imgString) {
-		    passImage(imgString)
-		    })
-		    */
-		    encodeImageFileAsURL()
+		    encodeImageFileAsURL();
+		    document.getElementById("upload-message").innerHTML = "Reading Scoresheet..."
+		} else {
+		    document.getElementById("upload-message").innerHTML = "Please upload a file."
 		}
-        else {
-            document.getElementById("upload-message").style.visibility="visible";
-        }
+		document.getElementById("upload-message").style.visibility="visible";
+	};
+
+	document.getElementById("file-upload").onclick = () => {
+		document.getElementById("upload-message").style.visibility="hidden";
+		document.getElementById("pgn-declarer").style.visibility="hidden";
+		document.getElementById("final-pgn").style.visibility="hidden";
 	};
 }
 
-function passImage(img) {
-	// ajax the JSON to the server
-	$.post("receiver", JSON.stringify(img), function() {
-
-	});
+function passImage(imgUrl) {
+	fetch("/receiver", {
+	    method: "POST",
+	    body: JSON.stringify(imgUrl)
+	}).then(res => {
+	    res.text().then((str) => {
+	        document.getElementById("final-pgn").innerHTML = str;
+	        document.getElementById("pgn-declarer").style.visibility="visible";
+	        document.getElementById("final-pgn").style.visibility="visible";
+	        console.log(str);
+	    });
+	})
 	// stop link reloading the page
- event.preventDefault();
+	event.preventDefault();
 }
+
 </script>
-Valid image formats: PGN, JPEG.<br /><br />
-<input type="file" id="file-upload" accept="image/png, image/jpeg">
-<input type="submit" id="submit-button" value="Read Game">
-<p id="upload-message">Please upload a file.</p>
+<div id="both-buttons">
+    <div id="file-holder">
+        <input type="file" name="file-upload" id="file-upload" class="inputfile" />
+        <label for="file-upload"><span>Choose File</span></label>
+    </div>
+    <div class="button-holder">
+        <input type="submit" id="submit-button" value="Read Game">
+    </div>
+    <div id="some-text">
+        <p id="upload-message">This text should be replaced</p>
+        <p id="pgn-declarer">Your PGN is: </p>
+        <p id="final-pgn">This text should be replaced</p>
+    </div>
+</div>
 </body>
 </html>
