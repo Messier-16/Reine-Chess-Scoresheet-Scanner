@@ -9,7 +9,7 @@
 <head>
     <link href="https://fonts.googleapis.com/css?family=Poppins:200" rel="stylesheet">
     <style type = 'text/css' media='screen'>
-        #upload-message, #final-pgn, #pgn-declarer { visibility: hidden; }
+        #upload-message, #final-pgn, #download-button, #download-button-holder { visibility: hidden; }
 
         p {
             font-family: 'Poppins', sans-serif;
@@ -26,7 +26,7 @@
             margin-left: -400px;
         }
 
-        #file-holder, .button-holder {
+        #file-holder, .button-holder, #download-button-holder {
             background-color: #D9FFF8;
             width: 800px;
             margin-left: 50%
@@ -43,7 +43,7 @@
 
         #file-holder { margin-bottom: 8vw; }
 
-        #submit-button {
+        #submit-button, #download-button {
             font-size: 1.3em;
             font-family: 'Poppins', sans-serif;
             background-color: #D9FFF8;
@@ -60,13 +60,15 @@
             -moz-transition:.5s;
             -webkit-transition:.5s;
             transition:.5s;
-            }
+        }
 
         #submit-button:focus { outline: 0; }
 
         #file-upload:focus { outline: 0; }
 
-        .button-holder, #file-holder { text-align: center; }
+        #download-button:focus { outline: 0; }
+
+        .button-holder, #download-button-holder, #file-holder { text-align: center; }
 
         .js .inputfile {
             width: 0.1px;
@@ -122,6 +124,16 @@
         }
 
         .button-holder:hover {
+            background-color: #5831F5;
+            color: #D9FFF8;
+        }
+
+        #download-button-holder:hover > #download-button {
+            background-color: #5831F5;
+            color: #D9FFF8;
+        }
+
+        #download-button-holder:hover {
             background-color: #5831F5;
             color: #D9FFF8;
         }
@@ -202,8 +214,8 @@ window.onload = function() {
 
 	document.getElementById("file-upload").onclick = () => {
 		document.getElementById("upload-message").style.visibility="hidden";
-		document.getElementById("pgn-declarer").style.visibility="hidden";
-		document.getElementById("final-pgn").style.visibility="hidden";
+		document.getElementById("download-button").style.visibility="hidden";
+		document.getElementById("download-button-holder").style.visibility="hidden";
 	};
 }
 
@@ -212,11 +224,26 @@ function passImage(imgUrl) {
 	    method: "POST",
 	    body: JSON.stringify(imgUrl)
 	}).then(res => {
-	    res.text().then((str) => {
-	        document.getElementById("final-pgn").innerHTML = str;
-	        document.getElementById("pgn-declarer").style.visibility="visible";
-	        document.getElementById("final-pgn").style.visibility="visible";
-	        console.log(str);
+	    res.text().then(str => {
+	        split = str.split("delimiter", 3);
+	        message = split[0];
+	        gameResult = split[1];
+	        moves = split[2];
+
+	        document.getElementById("download-button").onclick = () => {
+                var element = document.createElement("a");
+                var file = new Blob(["[Event \"Beta Test\"]\n[Site \"Beta Test\"]\n[Date \"N/A\"]\n[Round \"N/A\"]\n" +
+                    "[White \"N/A\"]\n[Black \"N/A\"]\n[Result \"" + gameResult + "\"]\n[WhiteElo \"N/A\"]\n[BlackElo " +
+                    "\"N/A\"]\n" + "[ECO \"C20\"]\n\n" + moves + "\n"], {type: 'text/plain'});
+                element.href = URL.createObjectURL(file);
+                element.download = "Reine Beta Test.pgn";
+                element.click();
+            };
+            document.getElementById("upload-message").innerHTML = message;
+            if(true) {  // message !== "There was an error!"
+	            document.getElementById("download-button").style.visibility="visible";
+	            document.getElementById("download-button-holder").style.visibility="visible";
+	        }
 	    });
 	})
 	// stop link reloading the page
@@ -234,8 +261,9 @@ function passImage(imgUrl) {
     </div>
     <div id="some-text">
         <p id="upload-message">This text should be replaced</p>
-        <p id="pgn-declarer">Your PGN is: </p>
-        <p id="final-pgn">This text should be replaced</p>
+    </div>
+    <div id="download-button-holder">
+        <button id="download-button">Download PGN</button>
     </div>
 </div>
 </body>
