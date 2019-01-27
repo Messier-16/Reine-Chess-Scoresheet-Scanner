@@ -5,11 +5,10 @@ import cv2 as cv
 from cv2 import aruco
 import numpy as np
 
-start = time.time()
-
 
 # detect marker
-def find_aruco(img):
+def find_markers(img):
+    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_4X4_50)
     # res[0] is the coordinates, res[1] is the marker ids
     res = aruco.detectMarkers(img, aruco_dict)
@@ -23,11 +22,11 @@ def get_data(marker_pos, marker_id, aruco_res):
     return data_point
 
 
-def get_transform():
-    rect = np.zeros((4, 2), 'float32')  # dtype = 'float32'
+def get_transform(numpy):
+    rect = np.zeros((4, 2), dtype='float32')
     for marker in range(4):
         # marker used twice because we use markers # 0, 1, 2, and 3
-        rect[marker] = (get_data(marker, marker, find_aruco(input_img)))
+        rect[marker] = (get_data(marker, marker, find_markers(numpy)))
     # top-left, top-right, bottom-right, bottom-left
     (tl, tr, br, bl) = rect
 
@@ -45,56 +44,26 @@ def get_transform():
         [0, 0],
         [max_width - 1, 0],  # minus one to make sure it all fits
         [max_width - 1, max_height - 1],
-        [0, max_height - 1]], 'float32')  # dtype = "float32
+        [0, max_height - 1]], dtype='float32')
 
     transform_mat = cv.getPerspectiveTransform(rect, dimensions)
-    # gray b/c color is not needed for this program
-    aligned_image = cv.warpPerspective(input_img, transform_mat, (max_width, max_height))
+    aligned_image = cv.warpPerspective(numpy, transform_mat, (max_width, max_height))
     return aligned_image
 
 
-'''
-# remove noise
-def clean(img):
-    # adaptive threshold changes threshold value based on surrounding pixels, binary to 0 or 255
-    # 115 = block size to take the avg of, 5 = amt (out of 255) over avg a pixel must be to be considered black
-    thresh_img = cv.adaptiveThreshold(img, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 115, 5)
-    # kernel = np.ones((2, 2), np.uint8)
-    # opened_img = cv.morphologyEx(thresh_img, cv.MORPH_OPEN, kernel)
-    # closed_img = cv.morphologyEx(opened_img, cv.MORPH_CLOSE, kernel)
-    # resized_image = cv.resize(aligned_image, (width, height))  # width, height are scoresheet-specific
-    return thresh_img
-'''
-
-
-file = cv.imread("C:\\Users\\alexf\\Desktop\\reine\\scoresheet_samples\\IMG_1388.JPG")
-# these values are scoresheet-specific, dim. are multiples of 11 x 17
-width = 506  # 11 * 46
-height = 770  # 17 * 46 - 12
-
-input_img = cv.cvtColor(file, cv.COLOR_BGR2GRAY)
-
-read = False
-aligned_img = None
-while not read:
+# returns color img but can be modified to return gray by moving cv.cvtColor from find_markers to get_transform
+def aruco_align(numpy):
     try:
-        # fails if the ArUco markers aren't detected
-        aligned_img = get_transform()
-        read = True
+        return get_transform(numpy)  # fails if the ArUco markers aren't detected
     except IndexError:
-        print("Please take another picture, align corners, and try not to have too much shadow")
-        # write some code to ask them to take another pic and wait until they do
+        return 'Failed to detect corners!'
 
-
-# big_img = cv.resize(aligned_img, (width * 2, height * 2))
-# clean_img = clean(big_img)
-final_img = cv.resize(aligned_img, (width, height))
-# ret, final_img = cv.threshold(right_size_img, 254, 255, cv.THRESH_BINARY)
 
 # just for testing
-cv.imshow('TransformedImage', final_img)
-cv.imwrite("C:\\Users\\alexf\\Desktop\\reine\\scoresheet_samples\\1388.png", final_img)
+start = time.time()
+file = cv.imread("C:\\Users\\alexf\\Desktop\\reine\\scoresheet_samples\\IMG_1388.JPG")
+cv.imshow('window', aruco_align(file))
 end = time.time()
-print(end - start)
+print('Time: ' + str(end - start) + ' s')
 cv.waitKey()
 cv.destroyAllWindows()
