@@ -7,8 +7,6 @@ import chess.pgn
 import itertools  # because I modify PGNs as strings (this is used in the string to PGN conversion)
 import io
 
-start = time.time()
-
 # the moves and confs listed here are just for testing purposes
 moves = [
 
@@ -736,7 +734,7 @@ moves = [
     ['Q', 'x', 'x', 'x', 'x', 'x', 'x', 'x'],
     ['c', 'e', 'x', 'x', 'x', 'x', 'x', 'x'],
     ['2', 'x', 'x', 'x', 'x', 'x', 'x', 'x'],
-    ['+', 'x', 'x', 'x', 'x', 'x', 'x', 'x'],
+    ['+', '#', 'x', 'x', 'x', 'x', 'x', 'x'],
 
     ['_']
 ]
@@ -1465,7 +1463,7 @@ confs = [
     [1, 0, 0, 0, 0, 0, 0, 0],
     [0.5, 0.5, 0, 0, 0, 0, 0, 0],
     [1, 0, 0, 0, 0, 0, 0, 0],
-    [1, 0, 0, 0, 0, 0, 0, 0],
+    [0.5, 0.5, 0, 0, 0, 0, 0, 0],
 
     [-1]
 ]
@@ -1528,11 +1526,30 @@ def get_pgns(the_moves, the_confs):
         boards.append('')  # filling up the list so we can set the value of list elements instead of appending
     boards.append('')  # we use the board of move_num + 1 to calculate validity, thus one extra element is needed
     boards[0] = chess.pgn.read_game(io.StringIO('e4')).board()  # just getting an empty starting board
-    best_guess = []
+
+    globals()['best_guess'] = []  # so we can return the longest correct pgn found instead of nothing
+    globals()['highest_checked'] = 0  # to find out which 'guess' is the longest, faster than comparing string length
+    globals()['game_result'] = ''  # so we can auto-fill who won/draw if possible
+
+    # if the game result is clear, provides added convenience for user
+    def get_game_result(board, move_num):
+        if board.is_game_over():
+            if board.is_checkmate():
+                if move_num % 2 == 0:
+                    return '0-1'
+                else:
+                    return '1-0'
+            else:
+                return '1/2-1/2'
+        elif board.can_claim_draw():
+            return '1/2-1/2'
+        else:
+            return '*'
 
     def check_variations(move_num):
         global best_guess
-        highest_checked = 0
+        global game_result
+        global highest_checked
 
         for possible_move in possible_moves[move_num]:
             boards[move_num + 1] = boards[move_num].copy()
@@ -1542,6 +1559,11 @@ def get_pgns(the_moves, the_confs):
                 if move_num == len(possible_moves) - 1:
                     pgn[move_num] = possible_move
                     possible_pgns.append(pgn.copy())
+                    if game_result != '*':  # we return '*' if not all games have same result
+                        if game_result == '':
+                            game_result = get_game_result(boards[move_num + 1], move_num + 1)
+                        elif not game_result == get_game_result(boards[move_num + 1], move_num + 1):
+                            game_result = '*'
                 else:
                     pgn[move_num] = possible_move
                     # if there is no error, we recursively check until we either reach an error or find a completely
@@ -1557,7 +1579,7 @@ def get_pgns(the_moves, the_confs):
 
     check_variations(0)
 
-    return possible_pgns, best_guess
+    return possible_pgns, best_guess, game_result
 
 
 # removing pgns including moves that have moves which are notated as, but are not, checks
@@ -1570,6 +1592,9 @@ def check_for_checks(possible_pgn_list):
             board.push_san(half_move)
             if half_move.endswith('+'):
                 if not board.is_check():
+                    valid = False
+            if half_move.endswith('#'):
+                if not board.is_checkmate():
                     valid = False
         if valid:
             checked_pgns.append(possible_pgn)
@@ -1590,43 +1615,51 @@ def list_to_pgn(checked_pgn):
             new_move = True
             move_num += 1
 
-    return reformatted
+    return reformatted.rstrip()  # remove spaces at end of string
 
 
 # different result depending on how many error-free PGNs are found
-def print_result(checked_pgns, good_guess):
+def get_result(checked_pgns, good_guess, result):
     if len(checked_pgns) == 1:
-        valid_pgn = list_to_pgn(checked_pgns[0])
-        print('The following pgn is valid:')
-        print(valid_pgn)
+        pgn = list_to_pgn(checked_pgns[0])
+        if result != '*':
+            pgn += ' ' + result
+        message = 'Success! Double check our work if you like.'
 
     elif not len(checked_pgns) > 0:
-        print('Sorry, we couldn\'t find a complete PGN--here\'s as far as we got:')
-        print(list_to_pgn(good_guess))
+        pgn = list_to_pgn(good_guess)
+        if result != '*':
+            pgn += ' ' + result
+        message = 'Sorry, we couldn\'t find a valid PGN--here\'s as far as we got:'
 
     else:
-        valid_pgn = list_to_pgn(checked_pgns[0])
-        print('We found multiple possible PGNs--here\'s our best guess:')
-        print(valid_pgn)
+        pgn = list_to_pgn(checked_pgns[0])
+        if result != '*':
+            pgn += ' ' + result
+        message = 'We found multiple possible PGNs--the moves you should double-check are:'
 
-        print('The moves you should check are:')
         for half_move in range(len(checked_pgns[0])):
             correct = True
-
             for possible_pgn in range(len(checked_pgns) - 1):
                 if checked_pgns[len(checked_pgns) - 1][half_move] != checked_pgns[possible_pgn][half_move]:
                     correct = False
             if not correct:
                 if half_move % 2 == 0:
-                    print('Move ' + str(int(half_move / 2 + 1)) + ' for white')
+                    message += '\nMove ' + str(int(half_move / 2 + 1)) + ' for white'
                 else:
-                    print('Move ' + str(int((half_move + 1) / 2)) + ' for black')
-    return
+                    message += '\nMove ' + str(int((half_move + 1) / 2)) + ' for black'
+
+    return message, result, pgn  # message tells user how well the program worked, result = winner of game/draw etc.
 
 
-# outputs of the program
-the_possible_pgns, a_good_guess = get_pgns(moves, confs)
-print_result(check_for_checks(the_possible_pgns), a_good_guess)
+def post_process(the_moves, the_confs):
+    the_possible_pgns, a_good_guess, game_res = get_pgns(the_moves, the_confs)
+    result = get_result(check_for_checks(the_possible_pgns), a_good_guess, game_res)
+    return result
 
+
+# test
+start = time.time()
+print(post_process(moves, confs))
 end = time.time()
 print('Time: ' + str(end - start))
