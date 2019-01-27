@@ -11,7 +11,7 @@ def find_markers(img):
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_4X4_50)
     # res[0] is the coordinates, res[1] is the marker ids
-    res = aruco.detectMarkers(img, aruco_dict)
+    res = aruco.detectMarkers(gray, aruco_dict)
     return res
 
 
