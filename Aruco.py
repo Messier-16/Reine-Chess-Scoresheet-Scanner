@@ -8,10 +8,9 @@ import numpy as np
 
 # detect marker
 def find_markers(img):
-    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_4X4_50)
     # res[0] is the coordinates, res[1] is the marker ids
-    res = aruco.detectMarkers(gray, aruco_dict)
+    res = aruco.detectMarkers(img, aruco_dict)
     return res
 
 
@@ -22,11 +21,11 @@ def get_data(marker_pos, marker_id, aruco_res):
     return data_point
 
 
-def get_transform(numpy):
+def get_transform(numpy, marker_numpy):
     rect = np.zeros((4, 2), dtype='float32')
     for marker in range(4):
         # marker used twice because we use markers # 0, 1, 2, and 3
-        rect[marker] = (get_data(marker, marker, find_markers(numpy)))
+        rect[marker] = (get_data(marker, marker, find_markers(marker_numpy)))
     # top-left, top-right, bottom-right, bottom-left
     (tl, tr, br, bl) = rect
 
@@ -52,18 +51,23 @@ def get_transform(numpy):
 
 
 # returns color img but can be modified to return gray by moving cv.cvtColor from find_markers to get_transform
-def aruco_align(numpy):
+def aruco_align(gray):
     try:
-        return get_transform(numpy)  # fails if the ArUco markers aren't detected
+        return get_transform(gray, gray)  # fails if the ArUco markers aren't detected
     except IndexError:
-        return 'Failed to detect corners!'
+        thresh = cv.adaptiveThreshold(gray, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 115, 0)
+        return get_transform(gray, thresh)
 
 
 # just for testing
 start = time.time()
-file = cv.imread("C:\\Users\\alexf\\Desktop\\reine\\scoresheet_samples\\IMG_1388.JPG")
-cv.imshow('window', aruco_align(file))
+file = cv.imread('C:\\Users\\alexf\\Desktop\\reine\\scoresheet_samples\\IMG_1457.JPG', 0)
+align = aruco_align(file)  # parameter is gray-scale image
+try:
+    final = cv.resize(align, (1100, 1700))
+    cv.imwrite('C:\\Users\\alexf\\Desktop\\reine\\scoresheet_samples\\1457.png', final)
+except IndexError:  # occurs when the corners are not found
+    print('We couldn\'t detect the corners of your scoresheet. Make sure the black boxes are clearly visible!.')
+
 end = time.time()
 print('Time: ' + str(end - start) + ' s')
-cv.waitKey()
-cv.destroyAllWindows()
