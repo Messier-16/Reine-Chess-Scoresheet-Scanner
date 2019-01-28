@@ -203,6 +203,9 @@ window.onload = function() {
 
 	// setup the button click
 	document.getElementById("submit-button").onclick = () => {
+	    document.getElementById("download-button").style.visibility="hidden";
+		document.getElementById("download-button-holder").style.visibility="hidden";
+
 		if(document.getElementById("file-upload").value.length > 0) {
 		    encodeImageFileAsURL();
 		    document.getElementById("upload-message").innerHTML = "Reading Scoresheet..."
@@ -230,17 +233,18 @@ function passImage(imgUrl) {
 	        gameResult = split[1];
 	        moves = split[2];
 
-	        document.getElementById("download-button").onclick = () => {
-                var element = document.createElement("a");
-                var file = new Blob(["[Event \"Beta Test\"]\n[Site \"Beta Test\"]\n[Date \"N/A\"]\n[Round \"N/A\"]\n" +
-                    "[White \"N/A\"]\n[Black \"N/A\"]\n[Result \"" + gameResult + "\"]\n[WhiteElo \"N/A\"]\n[BlackElo " +
-                    "\"N/A\"]\n" + "[ECO \"C20\"]\n\n" + moves + "\n"], {type: 'text/plain'});
-                element.href = URL.createObjectURL(file);
-                element.download = "Reine Beta Test.pgn";
-                element.click();
-            };
             document.getElementById("upload-message").innerHTML = message;
-            if(true) {  // message !== "There was an error!"
+            if(gameResult === '*' || gameResult === '1-0' || gameResult === '1/2-1/2' || gameResult === '0-1') {
+                document.getElementById("download-button").onclick = () => {
+                    var element = document.createElement("a");
+                    var file = new Blob(["[Event \"Beta Test\"]\n[Site \"Beta Test\"]\n[Date \"N/A\"]\n[Round \"N/A\"]\n" +
+                        "[White \"N/A\"]\n[Black \"N/A\"]\n[Result \"" + gameResult + "\"]\n[WhiteElo \"N/A\"]\n[BlackElo " +
+                        "\"N/A\"]\n" + "[ECO \"C20\"]\n\n" + moves + "\n"], {type: 'text/plain'});
+                    element.href = URL.createObjectURL(file);
+                    element.download = "Reine Beta Test.pgn";
+                    element.click();
+                };
+
 	            document.getElementById("download-button").style.visibility="visible";
 	            document.getElementById("download-button-holder").style.visibility="visible";
 	        }
