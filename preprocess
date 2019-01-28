@@ -31,7 +31,7 @@ def preprocess(img):
     gray = cv2.imread(img, cv2.cv2.IMREAD_GRAYSCALE)
 
     # resize the images and invert it (black background)
-    gray = cv2.resize(255-gray, (28, 28))
+    gray = cv2.resize(gray, (28, 28))
 
     # save the processed images
     cv2.imwrite("edited.png", gray)
