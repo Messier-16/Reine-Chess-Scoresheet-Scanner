@@ -129,7 +129,7 @@ def box_extraction(uncropped, cropped_dir_path):
 
 # for testing
 # parameter is gray-scale img
-file = 'C:\\Users\\alexf\\Desktop\\reine\\scoresheet_samples\\1457.png'
+file = 'C:\\Users\\alexf\\Desktop\\reine\\scoresheet_samples\\1388.png'
 numpy = cv.imread(file, 0)
 box_extraction(numpy, 'C:\\Users\\alexf\\Desktop\\reine\\cropped_imgs\\')
 
