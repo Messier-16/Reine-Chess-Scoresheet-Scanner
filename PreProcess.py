@@ -90,7 +90,7 @@ def pre_process(img):
         gray = shifted
         return gray / 255
     except IndexError:
-        return box
+        return 255 - box
 
 
 # for testing only
