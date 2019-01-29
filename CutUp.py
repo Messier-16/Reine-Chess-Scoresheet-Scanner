@@ -73,7 +73,8 @@ def box_extraction(uncropped, cropped_dir_path):
         post_contours = []
         for pre_contour in pre_contours:
             the_x, the_y, the_w, the_h = cv.boundingRect(pre_contour)
-            if int(w / 36.6) < the_w < int(w / 15.7) and int(h / 34) < the_h < int(h / 18.9) and the_w * 1.05 < the_h < the_w * 2:
+            if int(w / 36.6) < the_w < int(w / 15.7) and int(h / 34) < the_h < int(h / 18.9) and the_w * 1.05 < \
+                    the_h < the_w * 2:
                 post_contours.append(pre_contour)
         return post_contours
 
@@ -97,14 +98,28 @@ def box_extraction(uncropped, cropped_dir_path):
 
     idx = 0
     for c in range(500):
+        # which move num
+        move = int(idx / 20) + 1
+        if idx % 20 >= 10:
+            move += 25
+
+        # which player
+        player = 1
+        if idx % 10 >= 5:
+            player = 2
+
+        # which char in the move
+        move_idx = idx % 5 + 1
+
+        key = str(move) + '.' + str(player) + '.' + str(move_idx)
+
         # Returns the location and width,height for every contour
         x, y, w, h = cv.boundingRect(true_contours[c])
 
-        # If the box height > 20, width > 80, then only save it as a box in "cropped/" folder.
-        # This was moved up to sorting algorithm
-        idx += 1
         new_img = img[y:y + h, x:x + w]
-        cv.imwrite(cropped_dir_path + str(idx) + '.png', new_img)
+        cv.imwrite(cropped_dir_path + key + '.png', new_img)
+
+        idx += 1
 
         # For Debugging
         # Enable this line to see all contours.
