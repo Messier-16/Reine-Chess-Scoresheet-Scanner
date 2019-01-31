@@ -1,6 +1,7 @@
 import cv2 as cv
 import numpy as np
 import time
+import PreProcess
 
 start = time.time()
 
@@ -117,7 +118,7 @@ def box_extraction(uncropped, cropped_dir_path):
         x, y, w, h = cv.boundingRect(true_contours[c])
 
         new_img = img[y:y + h, x:x + w]
-        cv.imwrite(cropped_dir_path + key + '.png', new_img)
+        cv.imwrite(cropped_dir_path + key + '.png', PreProcess.pre_process(new_img))
 
         idx += 1
 
