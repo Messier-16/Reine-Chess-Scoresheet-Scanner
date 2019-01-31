@@ -15,7 +15,6 @@ mapping='012345678BKNQRXabcdefgh'
 print("Please load model architecture and model weights.")
 files.upload()
 
-!ls
 json_file = open('model-architecture.json', 'r')
 loaded_model_json = json_file.read()
 json_file.close()
