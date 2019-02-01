@@ -21,7 +21,7 @@ def get_contour_precedence(contour, row_y, half):
         return 1000000 * (row_num + 1) + x
 
 
-def box_extraction(uncropped, cropped_dir_path):
+def box_extraction(uncropped):
     # cropping image
     h, w = uncropped.shape[:2]
     img = uncropped[int(0 + h / 40): int(h - h / 40), int(0 + w / 50): int(w - w / 50)]
@@ -104,50 +104,14 @@ def box_extraction(uncropped, cropped_dir_path):
     # second output was originally img.shape[1]
     true_contours.sort(key=lambda the_contours: get_contour_precedence(the_contours, row_y, half))
 
-    idx = 0
+    cut_images = []
     for c in range(500):
-        # which move num
-        move = idx // 10 + 1
-
-        # which player
-        player = 1
-        if idx % 10 >= 5:
-            player = 2
-
-        # which char in the move
-        move_idx = idx % 5 + 1
-
-        key = str(move) + '.' + str(player) + '.' + str(move_idx)
-
         # Returns the location and width,height for every contour
         x, y, w, h = cv.boundingRect(true_contours[c])
 
-        new_img = img[y:y + h, x:x + w]
-        # scale helps prevent pixel loss, b is Gaussian Blur kernel size
-        scale = 1
-        blur = 1
-        by_mass = False
-        erode = False
+        cut_images.append(img[y:y + h, x:x + w])
 
-        if by_mass:
-            method = 'mass'
-        else:
-            method = 'fixed'
-        if erode:
-            erosion = 'True'
-        else:
-            erosion = 'False'
-
-        cv.imwrite(cropped_dir_path + key + '_gaussian' + str(blur) + '_scale' + str(scale) + '_center' + method +
-                   '_erosion' + erosion + '.png',
-                   PreProcess.pre_process(new_img, scale=scale, b=blur, by_mass=by_mass, erode=erode))
-
-        idx += 1
-
-        # For Debugging
-        # Enable this line to see all contours.
-        # cv.drawContours(img, contours, -1, (0, 0, 255), 3)
-        # cv.imwrite("./Temp/img_contour.jpg", img)
+    return cut_images
 
 
 # for testing

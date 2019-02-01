@@ -40,9 +40,12 @@ def pre_process(gray, scale, b, by_mass, erode):
     box = cv.copyMakeBorder(thresh, top=0, bottom=0, left=horizontal_border, right=horizontal_border,
                             borderType=cv.BORDER_CONSTANT, value=[255, 255, 255])
     if box.mean(axis=0).mean(axis=0) > 252:
-        return cv.resize(255 - box, (28, 28))
+        return cv.resize(255 - box, (28, 28), interpolation=cv.INTER_CUBIC)
 
     invert = 255 - box
+
+    invert = cv.GaussianBlur(invert, (b, b), sigmaX=1, sigmaY=1)
+
     while np.sum(invert[0]) == 0:
         invert = invert[1:]
 
@@ -54,8 +57,6 @@ def pre_process(gray, scale, b, by_mass, erode):
 
     while np.sum(invert[:, -1]) == 0:
         invert = np.delete(invert, -1, 1)
-
-    invert = cv.GaussianBlur(invert, (b, b), 0)
 
     if erode:
         e = 0.3 * scale
@@ -86,7 +87,7 @@ def pre_process(gray, scale, b, by_mass, erode):
         shift_x, shift_y = get_best_shift(padded)
         shifted = shift(padded, shift_x, shift_y)
 
-        return cv.resize(shifted, (28, 28))
+        return cv.resize(shifted, (28, 28), interpolation=cv.INTER_CUBIC)
 
     else:
         cols, rows = invert.shape
@@ -106,8 +107,9 @@ def pre_process(gray, scale, b, by_mass, erode):
             row_padding = int((28 - right_size.shape[1]) / 2)
             col_padding = padding
 
-        return cv.copyMakeBorder(right_size, top=col_padding, bottom=col_padding, left=row_padding,
-                                 right=row_padding, borderType=cv.BORDER_CONSTANT, value=[0, 0, 0])
+        bordered = cv.copyMakeBorder(right_size, top=col_padding, bottom=col_padding, left=row_padding,
+                                     right=row_padding, borderType=cv.BORDER_CONSTANT, value=[0, 0, 0])
+        return cv.resize(bordered, (28, 28), cv.INTER_CUBIC)
 
 
 '''
