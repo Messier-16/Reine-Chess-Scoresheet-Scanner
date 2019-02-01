@@ -21,17 +21,16 @@ def get_best_shift(img):
     return shift_x, shift_y
 
 
-def pre_process(gray, scale, b, by_mass):
+def pre_process(gray, scale, b, by_mass, erode):
     # resize the images and invert it (black background)
     h, w = gray.shape[:2]
     width = 2 * int(28 * scale * w / (2 * h))
 
     c = 2 * scale
     resize = cv.resize(gray, (width + c * 2, 28 * scale + c * 2))
-    blur = cv.GaussianBlur(resize, (b, b), 0)
 
     # to remove possible borders
-    crop = blur[c: c + 28 * scale, c: c + width]
+    crop = resize[c: c + 28 * scale, c: c + width]
 
     # threshold before adding whitespace
     threshold = crop.mean(axis=0).mean(axis=0) - 20
@@ -56,9 +55,19 @@ def pre_process(gray, scale, b, by_mass):
     while np.sum(invert[:, -1]) == 0:
         invert = np.delete(invert, -1, 1)
 
+    invert = cv.GaussianBlur(invert, (b, b), 0)
+
+    if erode:
+        e = 0.3 * scale
+        # the smaller the region of interest, the more we erode the image to provide uniform, readable stroke width
+        k = round(e * min(28 * scale / invert.shape[0], 28 * scale / invert.shape[1]))
+        kernel = np.ones((k, k), np.uint8)
+        invert = cv.erode(invert, kernel)
+
     if by_mass:
         rows, cols = invert.shape
 
+        # 20 x 20 box as the region of interest, 4px padding
         if rows > cols:
             factor = 20 * scale / rows
             rows = 20 * scale
@@ -81,24 +90,24 @@ def pre_process(gray, scale, b, by_mass):
 
     else:
         cols, rows = invert.shape
-        padding = 1  # one pixel minimum padding around each char
+        padding = 4  # px
 
         if rows > cols:
             x = 28 - 2 * padding
-            y = 2 * round(((28 * cols / rows) - 2 * padding) / 2)
+            y = 2 * round((28 - 2 * padding) * cols / (rows * 2))
             right_size = cv.resize(invert, (x, y))
             row_padding = padding
             col_padding = int((28 - right_size.shape[0]) / 2)
 
         else:  # cols > rows
-            x = 2 * round(((28 * rows / cols) - 2 * padding) / 2)
+            x = 2 * round((28 - 2 * padding) * rows / (cols * 2))
             y = 28 - 2 * padding
             right_size = cv.resize(invert, (x, y))
             row_padding = int((28 - right_size.shape[1]) / 2)
             col_padding = padding
 
-        return cv.copyMakeBorder(right_size, top=col_padding, bottom=col_padding, left=row_padding, right=row_padding,
-                                 borderType=cv.BORDER_CONSTANT, value=[0, 0, 0])
+        return cv.copyMakeBorder(right_size, top=col_padding, bottom=col_padding, left=row_padding,
+                                 right=row_padding, borderType=cv.BORDER_CONSTANT, value=[0, 0, 0])
 
 
 '''

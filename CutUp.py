@@ -123,16 +123,24 @@ def box_extraction(uncropped, cropped_dir_path):
         x, y, w, h = cv.boundingRect(true_contours[c])
 
         new_img = img[y:y + h, x:x + w]
-        # scale helps prevent pixel loss, b is Gaussian Blur kernel
-        scale = 2
-        blur = 3
-        by_mass = True
+        # scale helps prevent pixel loss, b is Gaussian Blur kernel size
+        scale = 1
+        blur = 1
+        by_mass = False
+        erode = False
+
         if by_mass:
             method = 'mass'
         else:
             method = 'fixed'
-        cv.imwrite(cropped_dir_path + key + '.gaussian=' + str(blur) + '.scale=' + str(scale) + '.center=' + method +
-                   '.png', PreProcess.pre_process(new_img, scale=scale, b=blur, by_mass=by_mass))
+        if erode:
+            erosion = 'True'
+        else:
+            erosion = 'False'
+
+        cv.imwrite(cropped_dir_path + key + '_gaussian' + str(blur) + '_scale' + str(scale) + '_center' + method +
+                   '_erosion' + erosion + '.png',
+                   PreProcess.pre_process(new_img, scale=scale, b=blur, by_mass=by_mass, erode=erode))
 
         idx += 1
 
