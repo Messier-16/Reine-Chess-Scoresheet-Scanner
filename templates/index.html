@@ -193,6 +193,11 @@ window.onload = function() {
                     label.querySelector( 'span' ).innerHTML = fileName;
                 else
                     label.innerHTML = labelVal;
+                if(label.innerHTML.endsWith('.png') === false && label.innerHTML.endsWith('.jpg') === false) {
+                    document.getElementById('upload-message').innerHTML = 'Sorry, only JPEG and PNG image formats are ' +
+                        'supported!';
+                    document.getElementById('upload-message').style.visibility='visible';
+                }
             });
 
             // Firefox bug fix
