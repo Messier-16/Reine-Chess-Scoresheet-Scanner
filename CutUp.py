@@ -2,18 +2,23 @@ import cv2 as cv
 import numpy as np
 import time
 import PreProcess
+import Test
 
 start = time.time()
 
 
-def get_contour_precedence(contour, row_y):
+def get_contour_precedence(contour, row_y, half):
     # dependent on the fact that the contouring (besides sorting) is perfect
     x, y, w, h = cv.boundingRect(contour)
     row_num = None
     for row in row_y:
         if row - h / 3 < y < row + h / 3:
             row_num = row_y.index(row)
-    return 10000 * row_num + x
+
+    if x + round(w / 2) < half:
+        return 10000 * (row_num + 1) + x
+    else:
+        return 1000000 * (row_num + 1) + x
 
 
 def box_extraction(uncropped, cropped_dir_path):
@@ -70,6 +75,8 @@ def box_extraction(uncropped, cropped_dir_path):
     im2, contours, hierarchy = cv.findContours(
         hori_close, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 
+    half = round(hori_close.shape[1] / 2)
+
     def get_true_contours(pre_contours):
         post_contours = []
         for pre_contour in pre_contours:
@@ -95,14 +102,12 @@ def box_extraction(uncropped, cropped_dir_path):
     row_y = set_row_y(true_contours)
 
     # second output was originally img.shape[1]
-    true_contours.sort(key=lambda the_contours: get_contour_precedence(the_contours, row_y))
+    true_contours.sort(key=lambda the_contours: get_contour_precedence(the_contours, row_y, half))
 
     idx = 0
     for c in range(500):
         # which move num
-        move = int(idx / 20) + 1
-        if idx % 20 >= 10:
-            move += 25
+        move = idx // 10 + 1
 
         # which player
         player = 1
@@ -118,7 +123,16 @@ def box_extraction(uncropped, cropped_dir_path):
         x, y, w, h = cv.boundingRect(true_contours[c])
 
         new_img = img[y:y + h, x:x + w]
-        cv.imwrite(cropped_dir_path + key + '.png', PreProcess.pre_process(new_img))
+        # scale helps prevent pixel loss, b is Gaussian Blur kernel
+        scale = 2
+        blur = 3
+        by_mass = True
+        if by_mass:
+            method = 'mass'
+        else:
+            method = 'fixed'
+        cv.imwrite(cropped_dir_path + key + '.gaussian=' + str(blur) + '.scale=' + str(scale) + '.center=' + method +
+                   '.png', PreProcess.pre_process(new_img, scale=scale, b=blur, by_mass=by_mass))
 
         idx += 1
 
