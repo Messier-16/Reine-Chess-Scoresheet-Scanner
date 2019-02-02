@@ -1,10 +1,5 @@
 import cv2 as cv
 import numpy as np
-import time
-import PreProcess
-import Test
-
-start = time.time()
 
 
 def get_contour_precedence(contour, row_y, half):
@@ -112,13 +107,3 @@ def box_extraction(uncropped):
         cut_images.append(img[y:y + h, x:x + w])
 
     return cut_images
-
-
-# for testing
-# parameter is gray-scale img
-file = 'C:\\Users\\alexf\\Desktop\\reine\\scoresheet_samples\\1388.png'
-numpy = cv.imread(file, 0)
-box_extraction(numpy, 'C:\\Users\\alexf\\Desktop\\reine\\cropped_imgs\\')
-
-end = time.time()
-print('Time: ' + str(end - start) + ' s')
