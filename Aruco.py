@@ -1,6 +1,5 @@
 # Created by Alex Fung on 1/5/19!!
 
-import time
 import cv2 as cv
 from cv2 import aruco
 import numpy as np
@@ -60,7 +59,7 @@ def aruco_align(gray):
 
 
 # just for testing
-start = time.time()
+'''
 file = cv.imread('C:\\Users\\alexf\\Desktop\\reine\\scoresheet_samples\\IMG_1457.JPG', 0)
 align = aruco_align(file)  # parameter is gray-scale image
 try:
@@ -68,6 +67,4 @@ try:
     cv.imwrite('C:\\Users\\alexf\\Desktop\\reine\\scoresheet_samples\\1457.png', final)
 except IndexError:  # occurs when the corners are not found
     print('We couldn\'t detect the corners of your scoresheet. Make sure the black boxes are clearly visible!.')
-
-end = time.time()
-print('Time: ' + str(end - start) + ' s')
+'''
