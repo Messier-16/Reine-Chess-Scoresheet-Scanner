@@ -8,7 +8,6 @@ import cv2 as cv
 import CutUp
 import PostProcess
 import PreProcess
-import Test
 
 
 # from base64 to numpy
@@ -56,7 +55,7 @@ def worker():
 
         processed_images = []
         for cut_image in cut_images:
-            processed_images.append(Test.pre_process(cut_image, b=3, by_mass=False))
+            processed_images.append(PreProcess.pre_process(cut_image, b=3, by_mass=False))
 
         for x in range(100):
             # for y in range(5):
