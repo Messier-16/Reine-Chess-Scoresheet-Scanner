@@ -1,13 +1,14 @@
 import cv2 as cv
 import numpy as np
 from scipy import ndimage
-import math
+from CutUp import box_extraction
 
 
 def shift(img, sx, sy):
     rows, cols = img.shape
     m = np.float32([[1, 0, sx], [0, 1, sy]])
     shifted = cv.warpAffine(img, m, (cols, rows))
+
     return shifted
 
 
@@ -21,104 +22,98 @@ def get_best_shift(img):
     return shift_x, shift_y
 
 
-def pre_process(gray, scale, b, by_mass, erode):
+def pre_process(gray, b, by_mass):
     # resize the images and invert it (black background)
     h, w = gray.shape[:2]
-    width = 2 * int(28 * scale * w / (2 * h))
+    width = 2 * int(128 * w / (2 * h))
 
-    c = 2 * scale
-    resize = cv.resize(gray, (width + c * 2, 28 * scale + c * 2))
+    c = 10
+    resize = cv.resize(gray, (width + c * 2, 128 + c * 2))
 
     # to remove possible borders
-    crop = resize[c: c + 28 * scale, c: c + width]
+    crop = resize[c: c + 128, c: c + width]
 
     # threshold before adding whitespace
     threshold = crop.mean(axis=0).mean(axis=0) - 20
     ret, thresh = cv.threshold(crop, threshold, 255, cv.THRESH_BINARY)
-    horizontal_border = int((28 * scale - width) / 2)
+    horizontal_border = int((128 - width) / 2)
     # add side borders to meet the 28x28 requirement
     box = cv.copyMakeBorder(thresh, top=0, bottom=0, left=horizontal_border, right=horizontal_border,
                             borderType=cv.BORDER_CONSTANT, value=[255, 255, 255])
+
+    # if there is no character we return a box with value < 3
     if box.mean(axis=0).mean(axis=0) > 252:
         return cv.resize(255 - box, (28, 28), interpolation=cv.INTER_CUBIC)
 
-    invert = 255 - box
+    invert = cv.GaussianBlur(255 - box, (b, b), sigmaX=1, sigmaY=1)
 
-    invert = cv.GaussianBlur(invert, (b, b), sigmaX=1, sigmaY=1)
+    if by_mass:
+        shift_x, shift_y = get_best_shift(invert)
+        shifted = shift(invert, shift_x, shift_y)
 
-    while np.sum(invert[0]) == 0:
-        invert = invert[1:]
+        while np.sum(shifted[0]) == 0 and np.sum(shifted[:, 0]) == 0 and np.sum(shifted[:, -1]) == 0 and \
+                np.sum(shifted[-1]) == 0:
+            shifted = shifted[1: -1, 1: -1]
 
-    while np.sum(invert[:, 0]) == 0:
-        invert = np.delete(invert, 0, 1)
-
-    while np.sum(invert[-1]) == 0:
-        invert = invert[:-1]
-
-    while np.sum(invert[:, -1]) == 0:
-        invert = np.delete(invert, -1, 1)
-
-    if erode:
-        e = 0.3 * scale
+        e = 1  # scale factor for erosion
         # the smaller the region of interest, the more we erode the image to provide uniform, readable stroke width
-        k = round(e * min(28 * scale / invert.shape[0], 28 * scale / invert.shape[1]))
+        k = round(e * max(128 / shifted.shape[0], 128 / shifted.shape[1]))
+        kernel = np.ones((k, k), np.uint8)
+        no_pad = cv.erode(shifted, kernel)
+
+        row_padding = 2
+        col_padding = 2
+
+    else:
+        while np.sum(invert[0]) == 0:
+            invert = invert[1:]
+
+        while np.sum(invert[:, 0]) == 0:
+            invert = np.delete(invert, 0, 1)
+
+        while np.sum(invert[-1]) == 0:
+            invert = invert[:-1]
+
+        while np.sum(invert[:, -1]) == 0:
+            invert = np.delete(invert, -1, 1)
+
+        e = 1  # scale factor for erosion
+        # the smaller the region of interest, the more we erode the image to provide uniform, readable stroke width
+        k = round(e * max(128 / invert.shape[0], 128 / invert.shape[1]))
         kernel = np.ones((k, k), np.uint8)
         invert = cv.erode(invert, kernel)
 
-    if by_mass:
-        rows, cols = invert.shape
-
-        # 20 x 20 box as the region of interest, 4px padding
-        if rows > cols:
-            factor = 20 * scale / rows
-            rows = 20 * scale
-            cols = int(round(cols * factor))
-            new_box = cv.resize(invert, (cols, rows))
-        else:
-            factor = 20 * scale / cols
-            cols = 20 * scale
-            rows = int(round(rows * factor))
-            new_box = cv.resize(invert, (cols, rows))
-
-        cols_padding = (int(math.ceil((28 * scale - cols) / 2.0)), int(math.floor((28 * scale - cols) / 2.0)))
-        rows_padding = (int(math.ceil((28 * scale - rows) / 2.0)), int(math.floor((28 * scale - rows) / 2.0)))
-        padded = np.lib.pad(new_box, (rows_padding, cols_padding), 'constant')
-
-        shift_x, shift_y = get_best_shift(padded)
-        shifted = shift(padded, shift_x, shift_y)
-
-        return cv.resize(shifted, (28, 28), interpolation=cv.INTER_CUBIC)
-
-    else:
         cols, rows = invert.shape
-        padding = 4  # px
 
         if rows > cols:
-            x = 28 - 2 * padding
-            y = 2 * round((28 - 2 * padding) * cols / (rows * 2))
-            right_size = cv.resize(invert, (x, y))
-            row_padding = padding
-            col_padding = int((28 - right_size.shape[0]) / 2)
+            row_padding = 2
+            col_padding = round((rows - cols) / 2) + 2
 
         else:  # cols > rows
-            x = 2 * round((28 - 2 * padding) * rows / (cols * 2))
-            y = 28 - 2 * padding
-            right_size = cv.resize(invert, (x, y))
-            row_padding = int((28 - right_size.shape[1]) / 2)
-            col_padding = padding
+            row_padding = round((cols - rows) / 2) + 2
+            col_padding = 2
 
-        bordered = cv.copyMakeBorder(right_size, top=col_padding, bottom=col_padding, left=row_padding,
-                                     right=row_padding, borderType=cv.BORDER_CONSTANT, value=[0, 0, 0])
-        return cv.resize(bordered, (28, 28), cv.INTER_CUBIC)
+        no_pad = invert
+
+    square = cv.copyMakeBorder(no_pad, top=col_padding, bottom=col_padding, left=row_padding,
+                               right=row_padding, borderType=cv.BORDER_CONSTANT, value=[0, 0, 0])
+
+    return cv.resize(square, (28, 28), cv.INTER_CUBIC)
 
 
-'''
-# for testing only
-for move in range(50):
-    for player in range(2):
-        for move_idx in range(5):
-            path = 'C:/Users/alexf/Desktop/reine/cropped_imgs/'
-            path += str(move + 1) + '.' + str(player + 1) + '.' + str(move_idx + 1) + '.png'
-            final = pre_process(cv.imread(path, 0))
-            cv.imwrite(path, final)
-'''
+# b is Gaussian Blur kernel size
+blur = 1
+by_mass = True
+
+if by_mass:
+    method = 'mass'
+else:
+    method = 'fixed'
+
+file = 'C:\\Users\\alexf\\Desktop\\reine\\scoresheet_samples\\1388.png'
+numpy = cv.imread(file, 0)
+cut_imgs = box_extraction(numpy)
+
+for a in range(500):
+    cv.imwrite('C:/Users/alexf/desktop/reine/cropped_imgs/' + str(a) + '_gaussian' + str(blur) + '_center' + method
+               + '.png', pre_process(cut_imgs[a], b=blur, by_mass=by_mass))
