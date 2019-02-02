@@ -6,8 +6,9 @@ import io
 import Aruco
 import cv2 as cv
 import CutUp
-import PostProcess
 import PreProcess
+import Identify
+import PostProcess
 
 
 # from base64 to numpy
@@ -59,7 +60,7 @@ def worker():
 
         for x in range(100):
             # for y in range(5):
-                # function(5 * x + y + 1)
+                # Identify.function(5 * x + y + 1)
             break
 
         # for testing
