@@ -1,7 +1,7 @@
 import cv2 as cv
 import numpy as np
 from scipy import ndimage
-# from CutUp import box_extraction
+from CutUp import box_extraction
 
 
 def shift(img, sx, sy):
@@ -22,7 +22,7 @@ def get_best_shift(img):
     return shift_x, shift_y
 
 
-def pre_process(gray, b, by_mass):
+def pre_process(gray, b, by_mass, boundary):
     # resize the images and invert it (black background)
     h, w = gray.shape[:2]
     width = 2 * int(128 * w / (2 * h))
@@ -43,7 +43,8 @@ def pre_process(gray, b, by_mass):
 
     # if there is no character we return a box with value < 3
     if box.mean(axis=0).mean(axis=0) > 252:
-        return cv.resize(255 - box, (28, 28), interpolation=cv.INTER_CUBIC)
+        final = cv.resize(255 - box, (28, 28), interpolation=cv.INTER_CUBIC)
+        return np.reshape(final, (1, 784))
 
     invert = cv.GaussianBlur(255 - box, (b, b), sigmaX=1, sigmaY=1)
 
@@ -55,11 +56,19 @@ def pre_process(gray, b, by_mass):
                 np.sum(shifted[-1]) == 0:
             shifted = shifted[1: -1, 1: -1]
 
-        e = 1  # scale factor for erosion
+        e = 5  # scale factor for erosion
         # the smaller the region of interest, the more we erode the image to provide uniform, readable stroke width
-        k = round(e * max(128 / shifted.shape[0], 128 / shifted.shape[1]))
-        kernel = np.ones((k, k), np.uint8)
-        no_pad = cv.erode(shifted, kernel)
+        scale = round(e * 128 / shifted.shape[0])  # width and length the same
+        if scale > boundary:
+            k = scale - boundary
+            kernel = np.ones((k, k), np.uint8)
+            no_pad = cv.erode(shifted, kernel)
+        elif scale < boundary:
+            k = boundary - scale
+            kernel = np.ones((k, k), np.uint8)
+            no_pad = cv.dilate(shifted, kernel)
+        else:
+            no_pad = shifted
 
         row_padding = 2
         col_padding = 2
@@ -77,13 +86,21 @@ def pre_process(gray, b, by_mass):
         while np.sum(invert[:, -1]) == 0:
             invert = np.delete(invert, -1, 1)
 
-        e = 1  # scale factor for erosion
-        # the smaller the region of interest, the more we erode the image to provide uniform, readable stroke width
-        k = round(e * max(128 / invert.shape[0], 128 / invert.shape[1]))
-        kernel = np.ones((k, k), np.uint8)
-        invert = cv.erode(invert, kernel)
+        e = 5  # scale factor for erosion
+        # erode/dilate based on size to provide uniform, readable stroke width
+        scale = round(e * min(128 / invert.shape[0], 128 / invert.shape[1]))
+        if scale > boundary:
+            k = scale - boundary
+            kernel = np.ones((k, k), np.uint8)
+            no_pad = cv.erode(invert, kernel)
+        elif scale < boundary:
+            k = boundary - scale
+            kernel = np.ones((k, k), np.uint8)
+            no_pad = cv.dilate(invert, kernel)
+        else:
+            no_pad = invert
 
-        cols, rows = invert.shape
+        cols, rows = no_pad.shape
 
         if rows > cols:
             row_padding = 2
@@ -93,18 +110,17 @@ def pre_process(gray, b, by_mass):
             row_padding = round((cols - rows) / 2) + 2
             col_padding = 2
 
-        no_pad = invert
-
     square = cv.copyMakeBorder(no_pad, top=col_padding, bottom=col_padding, left=row_padding,
                                right=row_padding, borderType=cv.BORDER_CONSTANT, value=[0, 0, 0])
 
-    return cv.resize(square, (28, 28), cv.INTER_CUBIC)
+    final = cv.resize(square, (28, 28), cv.INTER_CUBIC)
+    return np.reshape(final, (1, 784))
 
-'''
-# remove comment on CutUp import to test
+
 # b is Gaussian Blur kernel size
-blur = 1
+blur = 5
 by_mass = True
+bound = 8
 
 if by_mass:
     method = 'mass'
@@ -117,6 +133,4 @@ cut_imgs = box_extraction(numpy)
 
 for a in range(500):
     cv.imwrite('C:/Users/alexf/desktop/reine/cropped_imgs/' + str(a) + '_gaussian' + str(blur) + '_center' + method
-               + '.png', pre_process(cut_imgs[a], b=blur, by_mass=by_mass))
-'''
-
+               + '_bound' + str(bound) + '.png', pre_process(cut_imgs[a], b=blur, by_mass=by_mass, boundary=bound))

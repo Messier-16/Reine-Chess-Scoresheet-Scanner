@@ -1,9 +1,5 @@
-# the example game is Paul Keres vs. Kurt Paul Otto Joseph Richter, 22 Sep 1942
-# number of branches = 37
-# Created by Alex Fung on 1/16/19!
-
 import chess.pgn
-import itertools  # because I modify PGNs as strings (this is used in the string to PGN conversion)
+import itertools
 import io
 
 # for testing
@@ -43,7 +39,7 @@ def read_input(probabilities):
     certain_conf = 0.9999  # chars will be double-checked if they have confidence below this
     min_conf = 0.01  # chars will not be considered if their confidence is below this
 
-    key = '012345678abcdefghxBKNQR-'
+    key = '012345678BKNQRXabcdefgh-'
 
     all_the_possible_chars = []  # all possible variations of each move
     for move in probabilities:
@@ -197,16 +193,20 @@ def get_result(checked_pgns, good_guess, result):
         message = 'Success! Double check our work if you like.'
 
     elif not len(checked_pgns) > 0:
-        pgn = list_to_pgn(good_guess)
-        if result != '*' and len(result) > 0:
-            pgn += ' ' + result
-        message = 'Sorry, we couldn\'t find a valid PGN--here\'s as far as we got:'
+        if len(good_guess) > 0:
+            pgn = list_to_pgn(good_guess)
+            result = 'incomplete'
+            message = 'Sorry, we couldn\'t find the full PGN—here\'s as far as we got:'
+        else:
+            pgn = ''
+            result = ''
+            message = 'Sorry, we could\'nt even identify the first move!'
 
     else:
         pgn = list_to_pgn(checked_pgns[0])
         if result != '*' and len(result) > 0:
             pgn += ' ' + result
-        message = 'We found multiple possible PGNs--the moves you should double-check are: '
+        message = 'We found multiple possible PGNs—the moves you should double-check are: '
 
         for half_move in range(len(checked_pgns[0])):
             correct = True

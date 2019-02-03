@@ -6,9 +6,13 @@ import io
 import Aruco
 import cv2 as cv
 import CutUp
-import PreProcess
-import Identify
 import PostProcess
+import PreProcess
+
+aligned = None
+resized = None
+processed_images = []
+probabilities = []
 
 
 # from base64 to numpy
@@ -28,79 +32,96 @@ app = Flask(__name__)
 
 @app.route('/')
 def output():
-    # serve index template
     return render_template('index.html')
 
 
-@app.route('/receiver', methods=['POST'])
-def worker():
-    # read json + reply
+@app.route('/convert', methods=['POST'])
+def convert():
+    global aligned
     data = request.get_json(force=True)
 
-    def get_result(the_data):
-        try:
-            numpy = get_numpy(the_data)
-        except IndexError:
-            return 'Image file is too small. Please upload at least 1100 x 1700 px.', 'error', ''
+    try:
+        numpy = get_numpy(data)
+        aligned = Aruco.aruco_align(numpy)
+        return 'success'
+    except IndexError:
+        return 'Image file is too small. Please upload at least 1100 x 1700 px.'
 
-        try:
-            align = Aruco.aruco_align(numpy)
-        except IndexError:  # occurs when the corners are not found
-            return 'We couldn\'t detect the corners of your scoresheet. Make sure the black boxes are clearly ' \
-                   'visible!.', 'error', ''
-        try:
-            final = cv.resize(align, (1100, 1700))
-            cut_images = CutUp.box_extraction(final)
-        except IndexError:
-            return 'We couldn\'t detect all of the gridlines', 'error', ''
 
-        processed_images = []
-        for cut_image in cut_images:
-            processed_images.append(PreProcess.pre_process(cut_image, b=3, by_mass=False))
+@app.route('/align', methods=['GET'])
+def align():
+    global resized
 
-        for x in range(100):
-            # for y in range(5):
-                # Identify.function(5 * x + y + 1)
-            break
+    try:
+        resized = cv.resize(aligned, (1100, 1700))
+        return 'success'
+    except IndexError:
+        return 'We couldn\'t detect the corners of your scoresheet. Make sure the black boxes are clearly ' \
+               'visible!.'
 
-        # for testing
-        probabilities = [
-            [  # 1
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # e
-                [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]   # 4
-            ],
-            [
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # e
-                [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]   # 5
-            ],
-            [  # 2
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],  # N
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # c
-                [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]   # 3
-            ],
-            [
-                [0.5, 0, 0, 0, 0, 0.5, 0.5, 0.5, 0, 0, 0, 0.5, 0.5, 0, 0, 0, 0, 0, 0, 0, 0.9, 0, 0, 0],  # N
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # f
-                [0, 0, 0, 0, 0, 0, 0.5, 0, 0, 0, 0, 0, 0, 0, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0]   # 6
-            ],
-            [  # 3
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.9, 0, 0, 0, 0, 0, 0, 0, 0.5, 0, 0, 0],  # d
-                [0, 0, 0, 0, 0.9, 0, 0, 0, 0, 0, 0, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]   # 4
-            ],
-            [
-                [0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.9, 0, 0, 0, 0, 0, 0, 0, 0.5, 0, 0, 0],  # d
-                [0, 0, 0, 0, 0, 0.9, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]   # 5
-            ]
+
+@app.route('/preProcess', methods=['GET'])
+def pre_process():
+    global processed_images
+
+    try:
+        cut_images = CutUp.box_extraction(resized)
+    except IndexError:
+        return 'We couldn\'t detect all of the gridlines'
+
+    for cut_image in cut_images:
+        processed_images.append(PreProcess.pre_process(cut_image, b=3, by_mass=False, boundary=8))
+
+    return 'success'
+
+
+@app.route('/identify', methods=['GET'])
+def identify():
+    global probabilities
+
+    for x in range(100):
+        # for y in range(5):
+        # function(5 * x + y + 1)
+        break
+
+    # for testing
+    probabilities = [
+        [  # 1
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # e
+            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]  # 4
+        ],
+        [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # e
+            [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]  # 5
+        ],
+        [  # 2
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],  # N
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # c
+            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]  # 3
+        ],
+        [
+            [0.5, 0, 0, 0, 0, 0.5, 0.5, 0.5, 0, 0, 0, 0.5, 0.5, 0, 0, 0, 0, 0, 0, 0, 0.9, 0, 0, 0],  # N
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # f
+            [0, 0, 0, 0, 0, 0, 0.5, 0, 0, 0, 0, 0, 0, 0, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0]  # 6
+        ],
+        [  # 3
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.9, 0, 0, 0, 0, 0, 0, 0, 0.5, 0, 0, 0],  # d
+            [0, 0, 0, 0, 0.9, 0, 0, 0, 0, 0, 0, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]  # 4
+        ],
+        [
+            [0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.9, 0, 0, 0, 0, 0, 0, 0, 0.5, 0, 0, 0],  # d
+            [0, 0, 0, 0, 0, 0.9, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]  # 5
         ]
+    ]
 
-        return PostProcess.post_process(probabilities)
+    return 'success'
 
-    # Return result
-    message, game_res, moves = get_result(data)
-    # message, game_res, moves = 'It worked', '*', data  # to be updated
+
+@app.route('/postProcess', methods=['GET'])
+def post_process():
+    message, game_res, moves = PostProcess.post_process(probabilities)
     return message + 'delimiter' + game_res + 'delimiter' + moves
 
 
 if __name__ == '__main__':
-    # run!
     app.run()

@@ -154,110 +154,179 @@
 <body>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
 <script type="text/javascript">
-
 function encodeImageFileAsURL() {
+  var filesSelected = document.getElementById("file-upload").files;
+  if (filesSelected.length > 0) {
+    var fileToLoad = filesSelected[0];
 
-    var filesSelected = document.getElementById("file-upload").files;
-    if (filesSelected.length > 0) {
-      var fileToLoad = filesSelected[0];
+    var fileReader = new FileReader();
 
-      var fileReader = new FileReader();
+    fileReader.onload = function(fileLoadedEvent) {
+      var srcData = fileLoadedEvent.target.result; // <--- data: base64
 
-      fileReader.onload = function(fileLoadedEvent) {
-        var srcData = fileLoadedEvent.target.result; // <--- data: base64
-
-        passImage(srcData)
-      }
-      fileReader.readAsDataURL(fileToLoad);
-    }
+      passImage(srcData);
+    };
+    fileReader.readAsDataURL(fileToLoad);
   }
-
-window.onload = function() {
-    // https://tympanus.net/codrops/2015/09/15/styling-customizing-file-inputs-smart-way
-
-    'use strict';
-
-    ;( function ( document, window, index )
-    {
-        var inputs = document.querySelectorAll( '.inputfile' );
-        Array.prototype.forEach.call( inputs, function( input )
-        {
-            var label	 = input.nextElementSibling,
-                labelVal = label.innerHTML;
-
-            input.addEventListener( 'change', function( e )
-            {
-                var fileName = e.target.value.split( '\\' ).pop();
-
-                if( fileName )
-                    label.querySelector( 'span' ).innerHTML = fileName;
-                else
-                    label.innerHTML = labelVal;
-                if(fileName.endsWith('.png') === false && fileName.endsWith('.jpg') === false &&
-                    fileName.endsWith('.PNG') === false && fileName.endsWith('.JPG') === false) {
-                    document.getElementById('upload-message').innerHTML = 'Sorry, only JPEG and PNG image formats are ' +
-                        'supported!';
-                    document.getElementById('upload-message').style.visibility='visible';
-                }
-            });
-
-            // Firefox bug fix
-            input.addEventListener( 'focus', function(){ input.classList.add( 'has-focus' ); });
-            input.addEventListener( 'blur', function(){ input.classList.remove( 'has-focus' ); });
-        });
-    }( document, window, 0 ));
-
-	// setup the button click
-	document.getElementById("submit-button").onclick = () => {
-	    document.getElementById("download-button").style.visibility="hidden";
-		document.getElementById("download-button-holder").style.visibility="hidden";
-
-		if(document.getElementById("file-upload").value.length > 0) {
-		    encodeImageFileAsURL();
-		    document.getElementById("upload-message").innerHTML = "Reading Scoresheet..."
-		} else {
-		    document.getElementById("upload-message").innerHTML = "Please upload a file."
-		}
-		document.getElementById("upload-message").style.visibility="visible";
-	};
-
-	document.getElementById("file-upload").onclick = () => {
-		document.getElementById("upload-message").style.visibility="hidden";
-		document.getElementById("download-button").style.visibility="hidden";
-		document.getElementById("download-button-holder").style.visibility="hidden";
-	};
 }
 
+window.onload = function() {
+  // https://tympanus.net/codrops/2015/09/15/styling-customizing-file-inputs-smart-way
+
+  "use strict";
+
+  (function(document, window, index) {
+    var inputs = document.querySelectorAll(".inputfile");
+    Array.prototype.forEach.call(inputs, function(input) {
+      var label = input.nextElementSibling,
+        labelVal = label.innerHTML;
+
+      input.addEventListener("change", function(e) {
+        var fileName = e.target.value.split("\\").pop();
+
+        if (fileName) label.querySelector("span").innerHTML = fileName;
+        else label.innerHTML = labelVal;
+        if (
+          fileName.endsWith(".png") === false &&
+          fileName.endsWith(".jpg") === false &&
+          fileName.endsWith(".PNG") === false &&
+          fileName.endsWith(".JPG") === false
+        ) {
+          document.getElementById("upload-message").innerHTML =
+            "Sorry, only JPEG and PNG image formats are " + "supported!";
+          document.getElementById("upload-message").style.visibility =
+            "visible";
+        }
+      });
+
+      // Firefox bug fix
+      input.addEventListener("focus", function() {
+        input.classList.add("has-focus");
+      });
+      input.addEventListener("blur", function() {
+        input.classList.remove("has-focus");
+      });
+    });
+  })(document, window, 0);
+
+  // setup the button click
+  document.getElementById("submit-button").onclick = () => {
+    document.getElementById("download-button").style.visibility = "hidden";
+    document.getElementById("download-button-holder").style.visibility =
+      "hidden";
+
+    if (document.getElementById("file-upload").value.length > 0) {
+      encodeImageFileAsURL();
+      document.getElementById("upload-message").innerHTML = "Sending Image...";
+    } else {
+      document.getElementById("upload-message").innerHTML =
+        "Please upload a file.";
+    }
+    document.getElementById("upload-message").style.visibility = "visible";
+  };
+
+  document.getElementById("file-upload").onclick = () => {
+    document.getElementById("upload-message").style.visibility = "hidden";
+    document.getElementById("download-button").style.visibility = "hidden";
+    document.getElementById("download-button-holder").style.visibility =
+      "hidden";
+  };
+};
+
 function passImage(imgUrl) {
-	fetch("/receiver", {
-	    method: "POST",
-	    body: JSON.stringify(imgUrl)
-	}).then(res => {
-	    res.text().then(str => {
-	        split = str.split("delimiter", 3);
-	        message = split[0];
-	        gameResult = split[1];
-	        moves = split[2];
+  fetch("/convert", {
+    method: "POST",
+    body: JSON.stringify(imgUrl)
+  }).then(res1 => {
+    res1.text().then(str1 => {
+      if (str1 !== "success") {
+        document.getElementById("upload-message").innerHTML = str1;
+      } else {
+        document.getElementById("upload-message").innerHTML =
+          "Image sent. Aligning Image...";
+        fetch("/align", {
+          method: "GET"
+        }).then(res2 => {
+          res2.text().then(str2 => {
+            if (str2 !== "success") {
+              document.getElementById("upload-message").innerHTML = str2;
+            } else {
+              document.getElementById("upload-message").innerHTML =
+                "Image aligned. Processing image...";
+              fetch("/preProcess", {
+                method: "GET"
+              }).then(res3 => {
+                res3.text().then(str3 => {
+                  if (str3 !== "success") {
+                    document.getElementById("upload-message").innerHTML = str3;
+                  } else {
+                    document.getElementById("upload-message").innerHTML =
+                      "Image processed. Identifying characters...";
+                    fetch("/identify", {
+                      method: "GET"
+                    }).then(() => {
+                      document.getElementById("upload-message").innerHTML =
+                        "Characters identified. Checking legality...";
+                      fetch("/postProcess", {
+                        method: "GET"
+                      }).then(res5 => {
+                        res5.text().then(str5 => {
+                          split = str5.split("delimiter", 3);
+                          message = split[0];
+                          gameResult = split[1];
+                          moves = split[2];
 
-            document.getElementById("upload-message").innerHTML = message;
-            if(gameResult === '*' || gameResult === '1-0' || gameResult === '1/2-1/2' || gameResult === '0-1') {
-                document.getElementById("download-button").onclick = () => {
-                    var element = document.createElement("a");
-                    var file = new Blob(["[Event \"Beta Test\"]\n[Site \"Beta Test\"]\n[Date \"N/A\"]\n[Round \"N/A\"]\n" +
-                        "[White \"N/A\"]\n[Black \"N/A\"]\n[Result \"" + gameResult + "\"]\n[WhiteElo \"N/A\"]\n[BlackElo " +
-                        "\"N/A\"]\n" + "[ECO \"C20\"]\n\n" + moves + "\n"], {type: 'text/plain'});
-                    element.href = URL.createObjectURL(file);
-                    element.download = "Reine Beta Test.pgn";
-                    element.click();
-                };
+                          document.getElementById(
+                            "upload-message"
+                          ).innerHTML = message;
+                          if (
+                            gameResult === "*" ||
+                            gameResult === "1-0" ||
+                            gameResult === "1/2-1/2" ||
+                            gameResult === "0-1" ||
+                            gameResult === "incomplete"
+                          ) {
+                            document.getElementById(
+                              "download-button"
+                            ).onclick = () => {
+                              var element = document.createElement("a");
+                              var file = new Blob(
+                                [
+                                  '[Event "Beta Test"]\n[Site "Beta Test"]\n[Date "N/A"]\n[Round ' +
+                                    '"N/A"]\n[White "N/A"]\n[Black "N/A"]\n[Result "' +
+                                    gameResult +
+                                    '"]\n[WhiteElo "N/A"]\n[BlackElo "N/A"]\n[ECO "C20"]\n\n' +
+                                    moves +
+                                    "\n"
+                                ],
+                                { type: "text/plain" }
+                              );
+                              element.href = URL.createObjectURL(file);
+                              element.download = "Reine Beta Test.pgn";
+                              element.click();
+                            };
 
-	            document.getElementById("download-button").style.visibility="visible";
-	            document.getElementById("download-button-holder").style.visibility="visible";
-	        }
-	    });
-	})
-	// stop link reloading the page
-	event.preventDefault();
+                            document.getElementById(
+                              "download-button"
+                            ).style.visibility = "visible";
+                            document.getElementById(
+                              "download-button-holder"
+                            ).style.visibility = "visible";
+                          }
+                        });
+                      });
+                    });
+                  }
+                });
+              });
+            }
+          });
+        });
+      }
+    });
+  });
+  // stop link reloading the page
+  event.preventDefault();
 }
 
 </script>
