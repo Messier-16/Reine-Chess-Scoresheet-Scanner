@@ -1,7 +1,6 @@
 import cv2 as cv
 import numpy as np
 from scipy import ndimage
-from CutUp import box_extraction
 
 
 def shift(img, sx, sy):
@@ -115,22 +114,3 @@ def pre_process(gray, b, by_mass, boundary):
 
     final = cv.resize(square, (28, 28), cv.INTER_CUBIC)
     return np.reshape(final, (1, 784))
-
-
-# b is Gaussian Blur kernel size
-blur = 5
-by_mass = True
-bound = 8
-
-if by_mass:
-    method = 'mass'
-else:
-    method = 'fixed'
-
-file = 'C:\\Users\\alexf\\Desktop\\reine\\scoresheet_samples\\1388.png'
-numpy = cv.imread(file, 0)
-cut_imgs = box_extraction(numpy)
-
-for a in range(500):
-    cv.imwrite('C:/Users/alexf/desktop/reine/cropped_imgs/' + str(a) + '_gaussian' + str(blur) + '_center' + method
-               + '_bound' + str(bound) + '.png', pre_process(cut_imgs[a], b=blur, by_mass=by_mass, boundary=bound))

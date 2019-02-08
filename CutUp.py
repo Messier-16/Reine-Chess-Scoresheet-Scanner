@@ -25,8 +25,6 @@ def box_extraction(uncropped):
     img_bin = cv.adaptiveThreshold(img, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 15, 2)
     img_bin = 255 - img_bin  # Invert the image
 
-    cv.imwrite("Image_bin.jpg", img_bin)
-
     # Defining a kernel length
     kernel_length = np.array(img).shape[1] // 40
 
@@ -40,12 +38,10 @@ def box_extraction(uncropped):
     # Morphological operation to detect vertical lines from an image
     img_temp1 = cv.erode(img_bin, vertical_kernel, iterations=3)
     vertical_lines_img = cv.dilate(img_temp1, vertical_kernel, iterations=3)
-    # cv.imwrite("vertical_lines.jpg", vertical_lines_img)
 
     # Morphological operation to detect horizontal lines from an image
     img_temp2 = cv.erode(img_bin, hori_kernel, iterations=3)
     horizontal_lines_img = cv.dilate(img_temp2, hori_kernel, iterations=3)
-    # cv.imwrite("horizontal_lines.jpg", horizontal_lines_img)
 
     # Weighting parameters, this will decide the quantity of an image to be added to make a new image.
     alpha = 0.5
@@ -58,9 +54,7 @@ def box_extraction(uncropped):
 
     # For Debugging
     # Enable this line to see vertical and horizontal lines in the image which is used to find boxes
-    cv.imwrite("img_final_bin.jpg", img_final_bin)
     final = img-img_final_bin
-    cv.imwrite("final.jpg", final)
 
     # closing the lines
     vert_close = cv.morphologyEx(img_final_bin, cv.MORPH_OPEN, vertical_kernel)
@@ -76,8 +70,8 @@ def box_extraction(uncropped):
         post_contours = []
         for pre_contour in pre_contours:
             the_x, the_y, the_w, the_h = cv.boundingRect(pre_contour)
-            if int(w / 36.6) < the_w < int(w / 15.7) and int(h / 34) < the_h < int(h / 18.9) and the_w * 1.05 < \
-                    the_h < the_w * 2:
+            #if int(w / 36.6) < the_w < int(w / 15.7) and int(h / 34) < the_h < int(h / 18.9) and the_w * 1.05 < \the_h < the_w * 2:
+            if (the_w*1.2)<the_h:
                 post_contours.append(pre_contour)
         return post_contours
 

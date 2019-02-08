@@ -1,319 +1,382 @@
 <!DOCTYPE html>
 <html class="no-js">
-    <head>
-        <!-- remove this if you use Modernizr -->
-        <script>(function(e,t,n){var r=e.querySelectorAll("html")[0];r.className=r.className.replace(/(^|\s)no-js(\s|$)/,"$1js$2")})(document,window,0);</script>
-    </head>
+  <head>
+    <!-- remove this if you use Modernizr -->
+    <script>
+      (function(e, t, n) {
+        var r = e.querySelectorAll("html")[0];
+        r.className = r.className.replace(/(^|\s)no-js(\s|$)/, "$1js$2");
+      })(document, window, 0);
+    </script>
+  </head>
 </html>
 <html>
-<head>
-    <link href="https://fonts.googleapis.com/css?family=Poppins:200" rel="stylesheet">
-    <style type = 'text/css' media='screen'>
-        #upload-message, #final-pgn, #download-button, #download-button-holder { visibility: hidden; }
+  <head>
+    <link
+      href="https://fonts.googleapis.com/css?family=Poppins:200"
+      rel="stylesheet"
+    />
+    <style type="text/css" media="screen">
+      html {
+        overflow: hidden !important;
+      }
 
-        p {
-            font-family: 'Poppins', sans-serif;
-            font-size: 0.8em;
-            text-align: center;
-            color: #D9FFF8;
-            font-weight: bold;
-        }
+      #upload-message,
+      #final-pgn,
+      #download-button,
+      #download-button-holder {
+        visibility: hidden;
+      }
 
-        #both-buttons {
-            position: fixed;
-            left: 50%;
-            width: 800px;
-            margin-left: -400px;
-        }
+      body,
+      p {
+        margin: 0;
+      }
 
-        #file-holder, .button-holder, #download-button-holder {
-            background-color: #D9FFF8;
-            width: 800px;
-            margin-left: 50%
-            text-align: center;
-            display: inline-block;
-            border: solid #D9FFF8 2px;
+      p {
+        font-family: "Poppins", sans-serif;
+        font-size: 0.8em;
+        text-align: center;
+        color: #d9fff8;
+        font-weight: bold;
+      }
 
-            -o-transition:.5s;
-            -ms-transition:.5s;
-            -moz-transition:.5s;
-            -webkit-transition:.5s;
-            transition:.5s;
-        }
+      #both-buttons,
+      body,
+      html {
+        max-width: 98%;
+        margin-left: 1%;
+        margin-right: 1%;
+        overflow: hidden;
+      }
 
-        #file-holder { margin-bottom: 8vw; }
+      #file-holder,
+      .button-holder,
+      #download-button-holder {
+        background-color: #d9fff8;
+        width: 98%;
+        text-align: center;
+        display: inline-block;
+        border: solid #d9fff8 2px;
 
-        #submit-button, #download-button {
-            font-size: 1.3em;
-            font-family: 'Poppins', sans-serif;
-            background-color: #D9FFF8;
-            cursor: pointer;
-            color: #5831F5;
-            font-weight: bold;
-            border: none;
-            padding-top: 0.4vw;
-            padding-bottom: 0.4vw;
-            width: 800px;
+        -o-transition: 0.5s;
+        -ms-transition: 0.5s;
+        -moz-transition: 0.5s;
+        -webkit-transition: 0.5s;
+        transition: 0.5s;
+      }
 
-            -o-transition:.5s;
-            -ms-transition:.5s;
-            -moz-transition:.5s;
-            -webkit-transition:.5s;
-            transition:.5s;
-        }
+      #file-holder {
+        margin-bottom: 8vw;
+      }
 
-        #submit-button:focus { outline: 0; }
+      #submit-button,
+      #download-button {
+        font-size: 1.3em;
+        font-family: "Poppins", sans-serif;
+        background-color: Transparent;
+        cursor: pointer;
+        color: #8639ff;
+        font-weight: bold;
+        border: none;
+        padding-top: 0.4vw;
+        padding-bottom: 0.4vw;
+        width: 100%;
 
-        #file-upload:focus { outline: 0; }
+        -o-transition: 0.5s;
+        -ms-transition: 0.5s;
+        -moz-transition: 0.5s;
+        -webkit-transition: 0.5s;
+        transition: 0.5s;
+      }
 
-        #download-button:focus { outline: 0; }
+      #submit-button:focus {
+        outline: 0;
+      }
 
-        .button-holder, #download-button-holder, #file-holder { text-align: center; }
+      #file-upload:focus {
+        outline: 0;
+      }
 
-        .js .inputfile {
-            width: 0.1px;
-            height: 0.1px;
-            opacity: 0;
-            overflow: hidden;
-            position: absolute;
-            z-index: -1;
-        }
+      #download-button:focus {
+        outline: 0;
+      }
 
-        .no-js .inputfile + label { display: none; }
+      .button-holder,
+      #download-button-holder,
+      #file-holder {
+        text-align: center;
+      }
 
-        .inputfile + label {
-            font-size: 1.3em;
-            font-family: 'Poppins', sans-serif;
-            color: #5831F5;
-            background-color: #d9fff8;
-            display: inline-block;
-            cursor: pointer; /* "hand" cursor */
-            border: none;
-            font-weight: bold;
-            padding-top: 0.4vw;
-            padding-bottom: 0.4vw;
-            width: 800px;
+      .js .inputfile {
+        width: 0.1px;
+        height: 0.1px;
+        opacity: 0;
+        overflow: hidden;
+        position: absolute;
+        z-index: -1;
+      }
 
-            -o-transition:.5s;
-            -ms-transition:.5s;
-            -moz-transition:.5s;
-            -webkit-transition:.5s;
-            transition:.5s;
-        }
+      .no-js .inputfile + label {
+        display: none;
+      }
 
-        .inputfile:focus + label,
-        .inputfile + label:hover,
-        #submit-button:hover {
-            background-color: #5831F5;
-            color: #D9FFF8;
-        }
+      .inputfile + label {
+        font-size: 1.3em;
+        font-family: "Poppins", sans-serif;
+        color: #8639ff;
+        background-color: #d9fff8;
+        display: inline-block;
+        cursor: pointer; /* "hand" cursor */
+        border: none;
+        font-weight: bold;
+        padding-top: 0.4vw;
+        padding-bottom: 0.4vw;
+        width: 100%;
 
-        #file-holder:hover > .inputfile + label {
-            background-color: #5831F5;
-            color: #D9FFF8;
-        }
+        -o-transition: 0.5s;
+        -ms-transition: 0.5s;
+        -moz-transition: 0.5s;
+        -webkit-transition: 0.5s;
+        transition: 0.5s;
+      }
 
-        #file-holder:hover {
-            background-color: #5831F5;
-            color: #D9FFF8;
-        }
+      .inputfile:focus + label,
+      .inputfile + label:hover,
+      #submit-button:hover {
+        background-color: Transparent;
+        color: #d9fff8;
+      }
 
-        .button-holder:hover > #submit-button {
-            background-color: #5831F5;
-            color: #D9FFF8;
-        }
+      #file-holder:hover > .inputfile + label {
+        background-color: #8639ff;
+        color: #d9fff8;
+      }
 
-        .button-holder:hover {
-            background-color: #5831F5;
-            color: #D9FFF8;
-        }
+      #file-holder:hover {
+        background-color: #8639ff;
+        color: #d9fff8;
+      }
 
-        #download-button-holder:hover > #download-button {
-            background-color: #5831F5;
-            color: #D9FFF8;
-        }
+      .button-holder:hover > #submit-button {
+        background-color: Transparent;
+        color: #d9fff8;
+      }
 
-        #download-button-holder:hover {
-            background-color: #5831F5;
-            color: #D9FFF8;
-        }
+      .button-holder:hover {
+        background-color: #8639ff;
+        color: #d9fff8;
+      }
 
-        .inputfile:focus + label {
-            outline: 1px dotted #000;
-            outline: -webkit-focus-ring-color auto 5px;
-        }
+      #download-button-holder:hover > #download-button {
+        background-color: #8639ff;
+        color: #d9fff8;
+      }
 
-        .inputfile + label * { pointer-events: none; }
+      #download-button-holder:hover {
+        background-color: #8639ff;
+        color: #d9fff8;
+      }
 
-        #some-text {
-            width: 800px;
-            word-wrap: break-word;
-        }
+      .inputfile:focus + label {
+        outline: 1px dotted #000;
+        outline: -webkit-focus-ring-color auto 5px;
+      }
+
+      .inputfile + label * {
+        pointer-events: none;
+      }
+
+      #some-text {
+        width: 100%;
+        word-wrap: break-word;
+        margin-top: 1.5%;
+        margin-bottom: 1.5%;
+      }
     </style>
-</head>
-<body>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
-<script type="text/javascript">
-function encodeImageFileAsURL() {
-  var filesSelected = document.getElementById("file-upload").files;
-  if (filesSelected.length > 0) {
-    var fileToLoad = filesSelected[0];
+  </head>
+  <body>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <script type="text/javascript">
+      function encodeImageFileAsURL() {
+        var filesSelected = document.getElementById("file-upload").files;
+        if (filesSelected.length > 0) {
+          var fileToLoad = filesSelected[0];
 
-    var fileReader = new FileReader();
+          var fileReader = new FileReader();
 
-    fileReader.onload = function(fileLoadedEvent) {
-      var srcData = fileLoadedEvent.target.result; // <--- data: base64
+          fileReader.onload = function(fileLoadedEvent) {
+            var srcData = fileLoadedEvent.target.result; // <--- data: base64
 
-      passImage(srcData);
-    };
-    fileReader.readAsDataURL(fileToLoad);
-  }
-}
+            passImage(srcData);
+          };
+          fileReader.readAsDataURL(fileToLoad);
+        }
+      }
 
-window.onload = function() {
-  // https://tympanus.net/codrops/2015/09/15/styling-customizing-file-inputs-smart-way
+      window.onload = function() {
+        // https://tympanus.net/codrops/2015/09/15/styling-customizing-file-inputs-smart-way
 
-  "use strict";
+        "use strict";
 
-  (function(document, window, index) {
-    var inputs = document.querySelectorAll(".inputfile");
-    Array.prototype.forEach.call(inputs, function(input) {
-      var label = input.nextElementSibling,
-        labelVal = label.innerHTML;
+        (function(document, window, index) {
+          var inputs = document.querySelectorAll(".inputfile");
+          Array.prototype.forEach.call(inputs, function(input) {
+            var label = input.nextElementSibling,
+              labelVal = label.innerHTML;
 
-      input.addEventListener("change", function(e) {
-        var fileName = e.target.value.split("\\").pop();
+            input.addEventListener("change", function(e) {
+              var fileName = e.target.value.split("\\").pop();
 
-        if (fileName) label.querySelector("span").innerHTML = fileName;
-        else label.innerHTML = labelVal;
-        if (
-          fileName.endsWith(".png") === false &&
-          fileName.endsWith(".jpg") === false &&
-          fileName.endsWith(".PNG") === false &&
-          fileName.endsWith(".JPG") === false
-        ) {
-          document.getElementById("upload-message").innerHTML =
-            "Sorry, only JPEG and PNG image formats are " + "supported!";
+              if (fileName) label.querySelector("span").innerHTML = fileName;
+              else label.innerHTML = labelVal;
+              if (
+                fileName.endsWith(".png") === false &&
+                fileName.endsWith(".jpg") === false &&
+                fileName.endsWith(".PNG") === false &&
+                fileName.endsWith(".JPG") === false &&
+                fileName.endsWith(".JPEG") === false &&
+                fileName.endsWith(".jpeg") === false
+              ) {
+                document.getElementById("upload-message").innerHTML =
+                  "Sorry, only JPEG and PNG image formats are " + "supported!";
+                document.getElementById("upload-message").style.visibility =
+                  "visible";
+              }
+            });
+
+            // Firefox bug fix
+            input.addEventListener("focus", function() {
+              input.classList.add("has-focus");
+            });
+            input.addEventListener("blur", function() {
+              input.classList.remove("has-focus");
+            });
+          });
+        })(document, window, 0);
+
+        // setup the button click
+        document.getElementById("submit-button").onclick = () => {
+          document.getElementById("download-button").style.visibility =
+            "hidden";
+          document.getElementById("download-button-holder").style.visibility =
+            "hidden";
+
+          if (document.getElementById("file-upload").value.length > 0) {
+            encodeImageFileAsURL();
+            document.getElementById("upload-message").innerHTML =
+              "Sending image to server...";
+          } else {
+            document.getElementById("upload-message").innerHTML =
+              "Please upload a file.";
+          }
           document.getElementById("upload-message").style.visibility =
             "visible";
-        }
-      });
+        };
 
-      // Firefox bug fix
-      input.addEventListener("focus", function() {
-        input.classList.add("has-focus");
-      });
-      input.addEventListener("blur", function() {
-        input.classList.remove("has-focus");
-      });
-    });
-  })(document, window, 0);
+        document.getElementById("file-upload").onclick = () => {
+          document.getElementById("upload-message").style.visibility = "hidden";
+          document.getElementById("download-button").style.visibility =
+            "hidden";
+          document.getElementById("download-button-holder").style.visibility =
+            "hidden";
+        };
+      };
 
-  // setup the button click
-  document.getElementById("submit-button").onclick = () => {
-    document.getElementById("download-button").style.visibility = "hidden";
-    document.getElementById("download-button-holder").style.visibility =
-      "hidden";
-
-    if (document.getElementById("file-upload").value.length > 0) {
-      encodeImageFileAsURL();
-      document.getElementById("upload-message").innerHTML = "Sending image to server...";
-    } else {
-      document.getElementById("upload-message").innerHTML =
-        "Please upload a file.";
-    }
-    document.getElementById("upload-message").style.visibility = "visible";
-  };
-
-  document.getElementById("file-upload").onclick = () => {
-    document.getElementById("upload-message").style.visibility = "hidden";
-    document.getElementById("download-button").style.visibility = "hidden";
-    document.getElementById("download-button-holder").style.visibility =
-      "hidden";
-  };
-};
-
-function passImage(imgUrl) {
-  fetch("/convert", {
-    method: "POST",
-    body: JSON.stringify(imgUrl)
-  }).then(res1 => {
-    res1.text().then(str1 => {
-      if (str1 !== "success") {
-        document.getElementById("upload-message").innerHTML = str1;
-      } else {
-        document.getElementById("upload-message").innerHTML =
-          "Image sent. Aligning Image...";
-        fetch("/align", {
-          method: "GET"
-        }).then(res2 => {
-          res2.text().then(str2 => {
-            if (str2 !== "success") {
-              document.getElementById("upload-message").innerHTML = str2;
+      function passImage(imgUrl) {
+        fetch("/convert", {
+          method: "POST",
+          body: JSON.stringify(imgUrl)
+        }).then(res1 => {
+          res1.text().then(str1 => {
+            if (str1 !== "success") {
+              document.getElementById("upload-message").innerHTML = str1;
             } else {
               document.getElementById("upload-message").innerHTML =
-                "Image aligned. Processing image...";
-              fetch("/preProcess", {
+                "Image sent. Aligning Image...";
+              fetch("/align", {
                 method: "GET"
-              }).then(res3 => {
-                res3.text().then(str3 => {
-                  if (str3 !== "success") {
-                    document.getElementById("upload-message").innerHTML = str3;
+              }).then(res2 => {
+                res2.text().then(str2 => {
+                  if (str2 !== "success") {
+                    document.getElementById("upload-message").innerHTML = str2;
                   } else {
                     document.getElementById("upload-message").innerHTML =
-                      "Image processed. Identifying characters...";
-                    fetch("/identify", {
+                      "Image aligned. Processing image...";
+                    fetch("/preProcess", {
                       method: "GET"
-                    }).then(() => {
-                      document.getElementById("upload-message").innerHTML =
-                        "Characters identified. Checking legality...";
-                      fetch("/postProcess", {
-                        method: "GET"
-                      }).then(res5 => {
-                        res5.text().then(str5 => {
-                          split = str5.split("delimiter", 3);
-                          message = split[0];
-                          gameResult = split[1];
-                          moves = split[2];
-
+                    }).then(res3 => {
+                      res3.text().then(str3 => {
+                        if (str3 !== "success") {
                           document.getElementById(
                             "upload-message"
-                          ).innerHTML = message;
-                          if (
-                            gameResult === "*" ||
-                            gameResult === "1-0" ||
-                            gameResult === "1/2-1/2" ||
-                            gameResult === "0-1" ||
-                            gameResult === "incomplete"
-                          ) {
+                          ).innerHTML = str3;
+                        } else {
+                          document.getElementById("upload-message").innerHTML =
+                            "Image processed. Identifying characters...";
+                          fetch("/identify", {
+                            method: "GET"
+                          }).then(() => {
                             document.getElementById(
-                              "download-button"
-                            ).onclick = () => {
-                              var element = document.createElement("a");
-                              var file = new Blob(
-                                [
-                                  '[Event "Beta Test"]\n[Site "Beta Test"]\n[Date "N/A"]\n[Round ' +
-                                    '"N/A"]\n[White "N/A"]\n[Black "N/A"]\n[Result "' +
-                                    gameResult +
-                                    '"]\n[WhiteElo "N/A"]\n[BlackElo "N/A"]\n[ECO "C20"]\n\n' +
-                                    moves +
-                                    "\n"
-                                ],
-                                { type: "text/plain" }
-                              );
-                              element.href = URL.createObjectURL(file);
-                              element.download = "Reine Beta Test.pgn";
-                              element.click();
-                            };
+                              "upload-message"
+                            ).innerHTML =
+                              "Characters identified. Checking legality...";
+                            fetch("/postProcess", {
+                              method: "GET"
+                            }).then(res5 => {
+                              res5.text().then(str5 => {
+                                split = str5.split("delimiter", 3);
+                                message = split[0];
+                                gameResult = split[1];
+                                moves = split[2];
 
-                            document.getElementById(
-                              "download-button"
-                            ).style.visibility = "visible";
-                            document.getElementById(
-                              "download-button-holder"
-                            ).style.visibility = "visible";
-                          }
-                        });
+                                document.getElementById(
+                                  "upload-message"
+                                ).innerHTML = message;
+                                if (
+                                  gameResult === "*" ||
+                                  gameResult === "1-0" ||
+                                  gameResult === "1/2-1/2" ||
+                                  gameResult === "0-1" ||
+                                  gameResult === "incomplete"
+                                ) {
+                                  if ($(window).width() > 800) {
+                                    document.getElementById(
+                                      "download-button"
+                                    ).onclick = () => {
+                                      var element = document.createElement("a");
+                                      var file = new Blob(
+                                        [
+                                          '[Event "Beta Test"]\n[Site "Beta Test"]\n[Date "N/A"]\n[Round ' +
+                                            '"N/A"]\n[White "N/A"]\n[Black "N/A"]\n[Result "' +
+                                            gameResult +
+                                            '"]\n[WhiteElo "N/A"]\n[BlackElo "N/A"]\n[ECO "C20"]\n\n' +
+                                            moves +
+                                            "\n"
+                                        ],
+                                        { type: "text/plain" }
+                                      );
+                                      element.href = URL.createObjectURL(file);
+                                      element.download = "Reine Beta Test.pgn";
+                                      element.click();
+                                    };
+
+                                    document.getElementById(
+                                      "download-button"
+                                    ).style.visibility = "visible";
+                                    document.getElementById(
+                                      "download-button-holder"
+                                    ).style.visibility = "visible";
+                                  } else {
+                                    document.getElementById(
+                                      "upload-message"
+                                    ).innerHTML += ' ' + moves;
+                                  }
+                                }
+                              });
+                            });
+                          });
+                        }
                       });
                     });
                   }
@@ -322,28 +385,29 @@ function passImage(imgUrl) {
             }
           });
         });
+        // stop link reloading the page
+        event.preventDefault();
       }
-    });
-  });
-  // stop link reloading the page
-  event.preventDefault();
-}
-
-</script>
-<div id="both-buttons">
-    <div id="file-holder">
-        <input type="file" name="file-upload" id="file-upload" class="inputfile" />
+    </script>
+    <div id="both-buttons">
+      <div id="file-holder">
+        <input
+          type="file"
+          name="file-upload"
+          id="file-upload"
+          class="inputfile"
+        />
         <label for="file-upload"><span>Choose File</span></label>
-    </div>
-    <div class="button-holder">
-        <input type="submit" id="submit-button" value="Read Game">
-    </div>
-    <div id="some-text">
+      </div>
+      <div class="button-holder">
+        <input type="submit" id="submit-button" value="Read Game" />
+      </div>
+      <div id="some-text">
         <p id="upload-message">This text should be replaced</p>
-    </div>
-    <div id="download-button-holder">
+      </div>
+      <div id="download-button-holder">
         <button id="download-button">Download PGN</button>
+      </div>
     </div>
-</div>
-</body>
+  </body>
 </html>
