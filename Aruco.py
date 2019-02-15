@@ -1,8 +1,28 @@
-# Created by Alex Fung on 1/5/19!!
-
 import cv2 as cv
-from cv2 import aruco
+from cv2 import aruco  # from opencv-contrib-python
 import numpy as np
+
+
+def shadow_remover(img):
+    rgb_planes = cv.split(img)
+
+    result_planes = []
+    result_norm_planes = []
+    for plane in rgb_planes:
+        dilated_img = cv.dilate(plane, np.ones((7, 7), np.uint8))
+        bg_img = cv.medianBlur(dilated_img, 21)
+        diff_img = 255 - cv.absdiff(plane,
+        norm_img = cv.normalize(diff_img, None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8UC1)
+        _, thr_img = cv.threshold(norm_img, 230, 0, cv.THRESH_TRUNC)
+        cv.normalize(thr_img, thr_img, al bg_img)
+        # norm_img = diff_imgpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8UC1)
+        result_planes.append(diff_img)
+        result_norm_planes.append(norm_img)
+
+    # result = cv.merge(result_planes)
+    result_norm = cv.merge(result_norm_planes)
+
+    return result_norm
 
 
 # detect marker
@@ -49,22 +69,15 @@ def get_transform(numpy, marker_numpy):
     return aligned_image
 
 
-# returns color img but can be modified to return gray by moving cv.cvtColor from find_markers to get_transform
+# input/output are each a grayscale numpy array
 def aruco_align(gray):
     try:
-        return get_transform(gray, gray)  # fails if the ArUco markers aren't detected
+        align = get_transform(gray, gray)  # fails if the ArUco markers aren't detected
     except IndexError:
+        # thresholded image may be easier to find markers on
         thresh = cv.adaptiveThreshold(gray, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 115, 0)
-        return get_transform(gray, thresh)
+        align = get_transform(gray, thresh)
+    resize = cv.resize(align, (1100, 1700))  # it may be better to resize the image as the first step of the program
+    no_shadow = shadow_remover(resize)
 
-
-# just for testing
-'''
-file = cv.imread('C:\\Users\\alexf\\Desktop\\reine\\scoresheet_samples\\IMG_1457.JPG', 0)
-align = aruco_align(file)  # parameter is gray-scale image
-try:
-    final = cv.resize(align, (1100, 1700))
-    cv.imwrite('C:\\Users\\alexf\\Desktop\\reine\\scoresheet_samples\\1457.png', final)
-except IndexError:  # occurs when the corners are not found
-    print('We couldn\'t detect the corners of your scoresheet. Make sure the black boxes are clearly visible!.')
-'''
+    return no_shadow
