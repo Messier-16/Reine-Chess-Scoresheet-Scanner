@@ -98,27 +98,22 @@ def get_pgns(probabilities):
         if len(h_move) == 2:
             if h_move[0] in pawns and h_move[1] in nums:
                 return True
-            else:
-                return False
         elif len(h_move) == 3:
             if (h_move[0] in caps and h_move[1] in pawns and h_move[2] in nums) or h_move == 'O-O':
                 return True
-            else:
-                return False
         elif len(h_move) == 4:
-            if (h_move[0] in caps or h_move[0] in pawns) and \
-                    (h_move[1] == 'x' or h_move[1] in nums or h_move[1] in pawns) and \
+            # when the first char is a piece
+            if h_move[0] in caps and (h_move[1] == 'x' or h_move[1] in nums or h_move[1] in pawns) and \
                     h_move[2] in pawns and h_move[3] in nums:
                 return True
-            else:
-                return False
+            # when the first char is a pawn
+            elif h_move[0] in pawns and h_move[1] == 'x' and h_move[2] in pawns and h_move[3] in nums:
+                return True
         else:
             if (h_move[0] in caps or h_move[0] in pawns) and (h_move[1] in nums or h_move[1] in pawns) and \
-                    (h_move[2] == 'x' or h_move[2] in nums or h_move[2] in pawns) and h_move[3] in pawns and \
-                    h_move[4] in nums:
+                    h_move[2] == 'x' and h_move[3] in pawns and h_move[4] in nums:
                 return True
-            else:
-                return False
+        return False
 
     for move in range(len(possible_moves)):
         for char in range(len(possible_moves[move])):
