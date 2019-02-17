@@ -107,7 +107,8 @@ def get_pgns(probabilities):
                     h_move[2] in pawns and h_move[3] in nums:
                 return True
             # when the first char is a pawn
-            elif h_move[0] in pawns and h_move[1] == 'x' and h_move[2] in pawns and h_move[3] in nums:
+            elif h_move[0] in pawns and h_move[1] == 'x' and h_move[2] in pawns and h_move[3] in nums and \
+                    abs(pawns.index(h_move[0]) - pawns.index(h_move[2])) == 1:
                 return True
         else:
             if (h_move[0] in caps or h_move[0] in pawns) and (h_move[1] in nums or h_move[1] in pawns) and \
