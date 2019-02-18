@@ -9,6 +9,8 @@ Chess.com article here, describing roughly how this works: https://www.chess.com
 
 Show HackerNews post here: https://news.ycombinator.com/item?id=19162876
 
+We thank [Marek Śmigielski's post here](https://medium.com/@mareksmigielski/from-chess-score-sheet-to-icr-with-opencv-and-image-recognition-f7bed2cc3de4) for the alignment algorithm and a general perspective on how we could solve this problem, another developer who attempted the same idea. Lots of Kaggle kernels, other Medium articles, and StackOverflow posts obviously helped too.
+
 ![alt text](https://images.chesscomfiles.com/uploads/v1/blog/354692.06eee19c.630x354o.f755445341aa@2x.png)
 
 How it works:
