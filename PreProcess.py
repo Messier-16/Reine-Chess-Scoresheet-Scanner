@@ -3,88 +3,103 @@ import numpy as np
 from scipy import ndimage
 
 
-# we center images by center of mass, as this is what EMNIST creators did. This function carries out the shift
-def shift(img, sx, sy):
-    rows, cols = img.shape
-    m = np.float32([[1, 0, sx], [0, 1, sy]])
-    shifted = cv.warpAffine(img, m, (cols, rows))
+def pre_process(img):
+    height, width = img.shape[:2]
+
+    if height > width:
+        # EMNIST was preprocessed based on NIST samples, which have 128x128 px.
+        width = 128 * width // height
+        height = 128
+    else:
+        height = 128 * height // width
+        width = 128
+
+    # Remove residual box borders.
+    border_px_to_remove = 10
+    img = cv.resize(img, (width + 2 * border_px_to_remove, height + 2 * border_px_to_remove))
+    img = img[border_px_to_remove: border_px_to_remove + height, border_px_to_remove: border_px_to_remove + width]
+
+    saturation_threshold = img.mean(axis=0).mean(axis=0) - 20
+    _, img = cv.threshold(img, saturation_threshold, 255, cv.THRESH_BINARY)
+
+    # Create square img while preserving aspect ratio.
+    horizontal_border = (128 - width) // 2
+    vertical_border = (128 - height) // 2
+    img = cv.copyMakeBorder(img, top=vertical_border, bottom=vertical_border, left=horizontal_border,
+                            right=horizontal_border, borderType=cv.BORDER_CONSTANT, value=[255, 255, 255])
+    img = 255 - img
+
+    if is_empty(img):
+        box = (28, 28)
+        img = cv.resize(img, box, interpolation=cv.INTER_CUBIC)
+        return img
+
+    blur_kernel = (7, 7)
+    img = cv.GaussianBlur(img, blur_kernel, sigmaX=1, sigmaY=1)
+
+    img = mass_center(img)
+
+    while np.sum(img[0]) == 0 and np.sum(img[:, 0]) == 0 and np.sum(img[:, -1]) == 0 and np.sum(img[-1]) == 0:
+        img = img[1: -1, 1: -1]
+
+    # Stroke width normalization not in EMNIST but improves accuracy.
+    stroke_width_normalization_scale_factor = 3
+    img_size_threshold = 5
+    side_length = img.shape[0]
+    scaled_size = round(stroke_width_normalization_scale_factor * 128 / side_length)
+
+    if scaled_size > img_size_threshold:
+        kernel_size = scaled_size - img_size_threshold
+        kernel = np.ones((kernel_size, kernel_size), np.uint8)
+        img = cv.erode(img, kernel)
+    elif scaled_size < img_size_threshold:
+        kernel_size = img_size_threshold - scaled_size
+        kernel = np.ones((kernel_size, kernel_size), np.uint8)
+        img = cv.dilate(img, kernel)
+
+    img = cv.resize(img, (27, 27))
+
+    # EMNIST has 2 px but has a more consistent ROI size as it adapts NIST.
+    row_padding = 1
+    col_padding = 1
+
+    img = cv.copyMakeBorder(img, top=col_padding, bottom=col_padding, left=row_padding,
+                            right=row_padding, borderType=cv.BORDER_CONSTANT, value=[0, 0, 0])
+
+    img = cv.resize(img, (28, 28), cv.INTER_CUBIC)
+    return img
+
+
+def is_empty(box):
+    if box.mean(axis=0).mean(axis=0) < 3:
+        return True
+    return False
+
+
+# As per EMNIST
+def mass_center(img):
+    shifts = get_shifts(img)
+    img = shift(img, shifts)
+    return img
+
+
+def get_shifts(img):
+    center_y, center_x = ndimage.measurements.center_of_mass(img)
+    height, width = img.shape
+
+    shift_x = np.round(width / 2.0 - center_x).astype(int)
+    shift_y = np.round(height / 2.0 - center_y).astype(int)
+
+    shifts = (shift_x, shift_y)
+    return shifts
+
+
+def shift(img, shifts):
+    shift_x = shifts[0]
+    shift_y = shifts[1]
+
+    height, width = img.shape
+    transformation_matrix = np.float32([[1, 0, shift_x], [0, 1, shift_y]])
+    shifted = cv.warpAffine(img, transformation_matrix, (width, height))
 
     return shifted
-
-
-# getting the shift values
-def get_best_shift(img):
-    cy, cx = ndimage.measurements.center_of_mass(img)
-
-    rows, cols = img.shape
-    shift_x = np.round(cols / 2.0 - cx).astype(int)
-    shift_y = np.round(rows / 2.0 - cy).astype(int)
-
-    return shift_x, shift_y
-
-
-def pre_process(gray):
-    # resize the images and invert it (black background)
-    h, w = gray.shape[:2]
-    # resizing to 128 like EMNIST
-    width = 2 * int(128 * w / (2 * h))
-
-    # 'c' is number of pixels that will be cut off from the sides of the image, as we do not want overlapping lines
-    c = 10
-    resize = cv.resize(gray, (width + c * 2, 128 + c * 2))
-
-    # to remove possible borders
-    crop = resize[c: c + 128, c: c + width]
-
-    threshold = crop.mean(axis=0).mean(axis=0) - 20
-    ret, thresh = cv.threshold(crop, threshold, 255, cv.THRESH_BINARY)
-    # vertical is set to 128 px and we have to increase/decrease horizontal to maintain proportionality
-    horizontal_border = int((128 - width) / 2)
-    # add side borders to meet the 28x28 requirement
-    box = cv.copyMakeBorder(thresh, top=0, bottom=0, left=horizontal_border, right=horizontal_border,
-                            borderType=cv.BORDER_CONSTANT, value=[255, 255, 255])
-
-    # if the mean pixel value > 252 we assume there is no character written in the box
-    if box.mean(axis=0).mean(axis=0) > 252:
-        final = cv.resize(255 - box, (28, 28), interpolation=cv.INTER_CUBIC)
-        return np.reshape(final, (1, 784))  # we iterate through all 500 images later
-
-    b = 7  # size of the blur kernel
-    invert = cv.GaussianBlur(255 - box, (b, b), sigmaX=1, sigmaY=1)
-
-    # as defined above
-    shift_x, shift_y = get_best_shift(invert)
-    shifted = shift(invert, shift_x, shift_y)
-
-    # remove 1px-wide "rings" of whitespace on edges of image, preserving shift
-    while np.sum(shifted[0]) == 0 and np.sum(shifted[:, 0]) == 0 and np.sum(shifted[:, -1]) == 0 and \
-            np.sum(shifted[-1]) == 0:
-        shifted = shifted[1: -1, 1: -1]
-
-    # this was not done in EMNIST but improves accuracy. Normalizes stroke width by eroding small images which
-    # are scaled up a lot and dilating large images which have not been magnified
-    e = 5  # scale factor for erosion
-    boundary = 8
-
-    scale = round(e * 128 / shifted.shape[0])  # width and length the same so we can use shape[0]
-
-    if scale > boundary:  # if the image is large
-        k = scale - boundary
-        kernel = np.ones((k, k), np.uint8)
-        no_pad = cv.erode(shifted, kernel)
-    elif scale < boundary:  # if the image is small
-        k = boundary - scale
-        kernel = np.ones((k, k), np.uint8)
-        no_pad = cv.dilate(shifted, kernel)
-    else:
-        no_pad = shifted
-
-    # as per EMNIST
-    row_padding = 2
-    col_padding = 2
-
-    square = cv.copyMakeBorder(no_pad, top=col_padding, bottom=col_padding, left=row_padding,
-                               right=row_padding, borderType=cv.BORDER_CONSTANT, value=[0, 0, 0])
-
-    final = cv.resize(square, (28, 28), cv.INTER_CUBIC)
-    return np.reshape(final, (1, 784))
