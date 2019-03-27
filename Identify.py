@@ -179,18 +179,15 @@ def process(imgs):
         return prediction
 
     def read_game(processed_imgs):
-        #Outermost list to which move predictions from the above functions are appended to
         predictions = []
-        pop = 0
+        char_index = 0
         done = False
 
         while not done:
             move = []
-            #Loop through 1 ply each time (5 boxes), if mean pixel value after thresholding is less than 3, ignore box.
-            for i in range(pop, pop + 5):
-                # less than 3 means there is no char
-                if np.mean(processed_imgs[i]) > 3:
-                    char = processed_imgs[i].reshape(-1, 28, 28, 1) / 255.0
+            for i in range(char_index, char_index + 5):
+                if np.mean(processed_imgs[i]) > 3:  # Less than three means the box is empty.
+                    char = processed_imgs[i].reshape(-1, 28, 28, 1) / 255
                     move.append(char)
 
             prediction = identify_chars(move)
@@ -198,11 +195,9 @@ def process(imgs):
                 done = True
             else:
                 predictions.append(prediction)
-            #Box population counter, when 500 is reached (total number of boxes on scoresheet), complete function.
-            pop += 5
-            if pop == 500:
+
+            char_index += 5
+            if char_index == 500:
                 done = True
-
         return predictions
-
     return read_game(imgs)
