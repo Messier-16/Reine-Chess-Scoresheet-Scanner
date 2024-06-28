@@ -3,7 +3,7 @@ by Rithwik Sudharsan and Alex Fung
 
 This product scans chess scoresheets, but as per suggestions can be modified to work on other forms for processing. Open-sourced under the GPL license.
 
-Website here: https://www.reinechess.com/
+Website here: https://omcgov.wixsite.com/reine
 
 Chess.com article here, describing roughly how this works: https://www.chess.com/blog/ReineChess/scannable-scoresheets-free
 
